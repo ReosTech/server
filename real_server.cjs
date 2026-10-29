@@ -4,8 +4,7 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const querystring = require("querystring");
-const crypto = require("crypto");                                       
-const { ReosGuard } = require("reos-guard.cjs");
+const crypto = require("crypto");                                      
 
 const WEB_DIR = path.join(process.env.HOME, "mywebsite");
 const BUILD_DIR = path.join(WEB_DIR, "builds");                         
