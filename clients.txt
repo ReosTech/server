@@ -1,0 +1,4 @@
+client_bed6d0e4|sec_68d912861c70f1e2e2e7b000|https://reos.pagekite.me|Reos2026
+client_faabe237|sec_8de1db71283fcbea2f80686d|https://thecompilerofcompilers.github.io/Reos-Auth-Handeler-For-PenguinMod/|Reos2026
+client_9021a7ca|sec_13cf45c388f9f37a2ce90b74|https://thecompilerofcompilers.github.io/Reos-Auth-Handeler-For-PenguinMod/|Reos2026
+guard_b4488cc5|guard_sec_f1f2081ece54dd4d5ca3bc74|https://reostech.pagekite.me|Reos2026

@@ -1,0 +1,22 @@
+{
+    "Reos2026": "reos2026@reo18",
+    "durba.banerjee1998@gmail.com": {
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocL8BQevvLge0LRh7TEnHTAUWQNcBMeGOYMvcimbE21w6FfZOyHb=s96-c",
+        "type": "google"
+    },
+    "r": {
+        "password": "r",
+        "picture": "https://ui-avatars.com/api/?name=r&background=2563eb&color=fff",
+        "type": "reos"
+    },
+    "TEST": {
+        "password": "1234",
+        "picture": "https://ui-avatars.com/api/?name=TEST&background=2563eb&color=fff",
+        "type": "reos"
+    },
+    "g": {
+        "password": "g",
+        "picture": "https://ui-avatars.com/api/?name=g&background=2563eb&color=fff",
+        "type": "reos"
+    }
+}

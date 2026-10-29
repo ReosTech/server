@@ -1,0 +1,49 @@
+{
+    "reos_official@reostech": {
+        "email": "reos_official@reostech",
+        "owner": "Reos2026",
+        "createdAt": "2026-10-16T06:30:23.768Z",
+        "inbox": []
+    },
+    "g@reostech": {
+        "email": "g@reostech",
+        "owner": "g",
+        "createdAt": "2026-10-16T06:57:52.124Z",
+        "inbox": [
+            {
+                "id": "msg_ypcpb8qqu",
+                "sender": "reos_official@reostech",
+                "subject": "Hi",
+                "message": "## Hi\n**Hello**\n*This is a test message*",
+                "receivedAt": "2026-10-16T11:01:59.636Z"
+            }
+        ]
+    },
+    "support@reostech": {
+        "email": "support@reostech",
+        "owner": "Reos2026",
+        "createdAt": "2026-10-16T07:12:21.689Z",
+        "inbox": []
+    },
+    "reos2026@reostech": {
+        "email": "reos2026@reostech",
+        "owner": "Reos2026",
+        "createdAt": "2026-10-16T07:13:15.536Z",
+        "inbox": [
+            {
+                "id": "msg_qlwmz34gh",
+                "sender": "g@reostech",
+                "subject": "Good Afternoon Sir",
+                "message": "## Good Day\n**Have a great day**\n*Take care,bye*",
+                "receivedAt": "2026-10-16T11:05:14.173Z"
+            },
+            {
+                "id": "msg_hcoxrzir5",
+                "sender": "g@reostech",
+                "subject": "Hi",
+                "message": "Hello",
+                "receivedAt": "2026-10-19T08:20:04.140Z"
+            }
+        ]
+    }
+}

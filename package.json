@@ -1,0 +1,41 @@
+{
+  "name": "fireserver",
+  "version": "1.0.0",
+  "description": "secure your apps with reos guard",
+  "keywords": [
+    "\"bot",
+    "protection\"",
+    "\"secuirity\"",
+    "\"made",
+    "by",
+    "reos\""
+  ],
+  "license": "MIT",
+  "author": "Reos Technologies",
+  "type": "module",
+  "main": "fireserver.js",
+  "scripts": {
+    "test": "rguard --test",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.19.0",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.4.2",
+    "firebase": "^13.1.0",
+    "google-auth-library": "^11.0.0",
+    "gradle": "^1.0.8",
+    "localhost": "^0.4.1",
+    "oauth": "^0.10.2",
+    "openai": "^6.48.0",
+    "openssl": "^2.0.0",
+    "password": "^0.1.1",
+    "reos-guard": "^2.0.1",
+    "salt": "^0.5.5",
+    "webkit": "^0.0.0"
+  },
+  "allowScripts": {
+    "@google/genai@2.19.0": true,
+    "protobufjs@7.6.6": true
+  }
+}
