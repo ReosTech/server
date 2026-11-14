@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reos - Cloud Storage</title>
+  <link rel="icon" href="reo.jpg">
+  <script src="https://js.puter.com/v2/"></script>
+  <script src="https://reostech.pagekite.me/reos-guard.js" defer></script>
+  
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #1f2937;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: #3b82f6;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .auth-status {
+      font-size: 14px;
+      color: #9ca3af;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: #f9fafb;
+    }
+
+    /* CUSTOM FILE DROP ZONE */
+    .drop-zone {
+      border: 2px dashed #4b5563;
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      background: #111827;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone:hover {
+      border-color: #3b82f6;
+      background: #1e293b;
+    }
+
+    .drop-zone-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .drop-zone-text {
+      font-size: 14px;
+      color: #9ca3af;
+    }
+
+    .file-preview {
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #60a5fa;
+      word-break: break-all;
+    }
+
+    .upload-action {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* BUTTON STYLES */
+    button {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-nav {
+      background: #374151;
+      color: #f3f4f6;
+    }
+
+    .btn-nav:hover {
+      background: #4b5563;
+    }
+
+    /* FILE LIST */
+    .file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #374151;
+      gap: 12px;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #e5e7eb;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary {
+      background: #1e40af;
+      color: #dbeafe;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-secondary:hover { background: #1e3a8a; }
+
+    .btn-danger {
+      background: #991b1b;
+      color: #fee2e2;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-danger:hover { background: #7f1d1d; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="brand">Reos Cloud Storage</span>
+    <div class="header-actions">
+      <div class="auth-status" id="authStatus"></div>
+      <button class="btn-nav" onclick="window.location.href='/index.html'">Home</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- UPLOAD SECTION -->
+    <div class="card">
+      <h3>Upload File</h3>
+      <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-zone-icon">📁</div>
+        <div class="drop-zone-text">Click to choose a file or drag and drop here</div>
+        <div class="file-preview" id="fileNamePreview"></div>
+      </div>
+      <input type="file" id="fileInput" style="display: none;" onchange="updateFilePreview()">
+      
+      <div class="upload-action">
+        <button id="uploadBtn" onclick="uploadFile()">Upload File</button>
+      </div>
+    </div>
+
+    <!-- FILE LIST SECTION -->
+    <div class="card">
+      <h3>My Cloud Files</h3>
+      <ul class="file-list" id="fileList">
+        <li>Loading files...</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+  let selectedFile = null;
+
+  async function init() {
+    const authStatus = document.getElementById('authStatus');
+    if (!puter.auth.isSignedIn()) {
+      authStatus.innerHTML = `<button onclick="login()">Login to Reos Cloud</button>`;
+    } else {
+      const user = await puter.auth.getUser();
+      authStatus.innerText = `Logged in: ${user.username}`;
+      loadFiles();
+    }
+  }
+
+  async function login() {
+    await puter.auth.signIn();
+    init();
+  }
+
+  function updateFilePreview() {
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('fileNamePreview');
+    if (fileInput.files.length > 0) {
+      selectedFile = fileInput.files[0];
+      preview.innerText = `Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+    }
+  }
+
+  async function loadFiles() {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '<li style="color: #9ca3af;">Loading files...</li>';
+
+    try {
+      const items = await puter.fs.readdir('./');
+      fileList.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        fileList.innerHTML = '<li style="color: #9ca3af;">No files stored yet.</li>';
+        return;
+      }
+
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `
+          <span class="file-name" title="${item.name}">${item.name}</span>
+          <div class="file-actions">
+            <button class="btn-secondary" onclick="downloadFile('${item.name}')">Download</button>
+            <button class="btn-danger" onclick="deleteFile('${item.name}')">Delete</button>
+          </div>
+        `;
+        fileList.appendChild(li);
+      });
+    } catch (err) {
+      fileList.innerHTML = '<li style="color: #f87171;">Failed to load files. Make sure you are signed in.</li>';
+    }
+  }
+
+  async function uploadFile() {
+    if (!selectedFile) {
+      alert('Please select a file first.');
+      return;
+    }
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    uploadBtn.innerText = 'Uploading...';
+    uploadBtn.disabled = true;
+
+    try {
+      await puter.fs.write(selectedFile.name, selectedFile);
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileNamePreview').innerText = '';
+      selectedFile = null;
+      await loadFiles();
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      uploadBtn.innerText = 'Upload File';
+      uploadBtn.disabled = false;
+    }
+  }
+
+  async function downloadFile(name) {
+    try {
+      const item = await puter.fs.read(name);
+      const url = URL.createObjectURL(item);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Error downloading file: ' + err.message);
+    }
+  }
+
+  async function deleteFile(name) {
+    if (confirm(`Delete "${name}"?`)) {
+      try {
+        await puter.fs.delete(name);
+        await loadFiles();
+      } catch (err) {
+        alert('Error deleting file: ' + err.message);
+      }
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

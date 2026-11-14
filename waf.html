@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+h1{
+	font-family: Sans Serif;
+	text-align: center;
+}
+.main{
+	text-align:center;
+}
+.gradient-btn {
+	  /* Gradient background from blue to pink */
+	    background: linear-gradient(135deg, #00c6ff, #ff758c);
+	      border: none;
+	        border-radius: 50px; /* Fully rounded pill shape */
+	          color: #ffffff;
+	            cursor: pointer;
+	              font-size: 16px;
+	                font-weight: 600;
+	                  padding: 12px 28px;
+	                    transition: all 0.3s ease;
+	                      box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4);
+	                      }
+
+	                      /* Hover effect: shifts shadow and slightly lifts the button */
+	                      .gradient-btn:hover {
+	                      	  transform: translateY(-2px);
+	                      	    box-shadow: 0 6px 20px rgba(0, 198, 255, 0.5);
+	                      	    }
+
+	                      	    /* Active click effect */
+	                      	    .gradient-btn:active {
+	                      	    	  transform: translateY(1px);
+	                      	    	  }
+	                      	    	  
+	                      	    }
+	                      }
+}
+.gradient-input {
+	  /* Size and Spacing */
+	    width: 100%;
+	      max-width: 400px;
+	        padding: 12px 20px;
+
+	            /* Shaping */
+	              border-radius: 50px; /* Fully rounded pills */
+
+	                  /* Typography */
+	                    font-size: 16px;
+	                      color: #333333;
+
+	                          /* Gradient Border Effect */
+	                            border: 2px solid transparent;
+	                              background-image: linear-gradient(white, white), linear-gradient(to right, #4ade80, #f43f5e); /* Fallback to standard colors, see below for blue/pink */
+	                                background-origin: border-box;
+	                                  background-clip: padding-box, border-box;
+
+	                                      /* Reset default outline */
+	                                        outline: none;
+	                                          transition: box-shadow 0.2s ease;
+	                                          }
+
+	                                          /* Blue and pink gradient version */
+	                                          .blue-pink-input {
+	                                          	  width: 100%;
+	                                          	    max-width: 400px;
+	                                          	      padding: 12px 20px;
+	                                          	        border-radius: 50px;
+	                                          	          font-size: 16px;
+	                                          	            color: #333;
+
+	                                          	                /* Blue to Pink Gradient Border */
+	                                          	                  border: 2px solid transparent;
+	                                          	                    background-image: linear-gradient(white, white), linear-gradient(to right, #3b82f6, #ec4899);
+	                                          	                      background-origin: border-box;
+	                                          	                        background-clip: padding-box, border-box;
+	                                          	                          outline: none;
+	                                          	                          }
+
+	                                          	                          /* Optional Focus State */
+	                                          	                          .blue-pink-input:focus {
+	                                          	                          	  box-shadow: 0 0 8px rgba(236, 72, 153, 0.3);
+	                                          	                          	  }
+	                                          	                          	  
+	                                          	                          }
+	                                          	                          .pill-input {
+	                                          	                          	  /* The secret ingredient for the perfect pill shape */
+	                                          	                          	    border-radius: 9999px; 
+
+	                                          	                          	        /* Standard input reset and layout styling */
+	                                          	                          	          border: 2px solid #ccc;
+	                                          	                          	            padding: 10px 20px; /* Generous left/right padding looks best with pill shapes */
+	                                          	                          	              font-size: 16px;
+	                                          	                          	                outline: none;
+	                                          	                          	                  width: 100%;
+	                                          	                          	                    max-width: 300px;
+	                                          	                          	                      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	                                          	                          	                      }
+
+	                                          	                          	                      /* Add a nice interactive focus effect */
+	                                          	                          	                      .pill-input:focus {
+	                                          	                          	                      	  border-color: #007bff;
+	                                          	                          	                      	    box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+	                                          	                          	                      	    }
+	                                          	                          	                      	    
+	                                          	                          	                      }
+	                                          	                          }
+	                                          }
+}
+/* Container to help position or constrain the input bar */
+.input-container {
+	  width: 100%;
+	    max-width: 400px;
+	      margin: 20px auto;
+	      }
+
+	      /* Base styles for the input bar */
+	      .custom-input {
+	      	  width: 100%;
+	      	    padding: 12px 2px;
+	      	      font-size: 16px;
+	      	        color: #333333;
+	      	          background-color: #f5f5f7;
+	      	            border: 2px solid transparent;
+	      	              border-radius: 8px;
+	      	                outline: none; /* Removes the default browser glow */
+	      	                  transition: all 0.3s ease; /* Enables smooth animations */
+	      	                  }
+
+	      	                  /* Style the placeholder text color */
+	      	                  .custom-input::placeholder {
+	      	                  	  color: #a0a0a5;
+	      	                  	  }
+
+	      	                  	  /* Interactive focus state when a user clicks into the bar */
+	      	                  	  .custom-input:focus {
+	      	                  	  	  background-color: #ffffff;
+	      	                  	  	    border-color: #0071e3; /* Modern blue accent border */
+	      	                  	  	      box-shadow: 0 0 8px rgba(0, 113, 227, 0.2); /* Soft ambient glow */
+	      	                  	  	      }
+	      	                  	  	      
+	      	                  	  }
+	      	                  }
+	      }
+}
+
+
+</style>
+<script src="https://reostech.pagekite.me/reos-guard.js" defer></script>
+<input type="hidden" name="reos_token" id="reos_token">
+<div class="main">
+<form>
+<h1>Site Verification</h1>
+<hr>
+<div class="input-container">
+<input class="custom-input"  type="text" placeholder="type something (optional)" ></input>
+</div>
+<button class="gradient-btn"  type="submit">Verify</button>
+</form>
+</div>
+<footer>
+<h5 style="font-family: Sans Serif; text-align: center;"> &copy 2026 Reos. all rights reserved</h5>

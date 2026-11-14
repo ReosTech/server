@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reos Guard Client Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .box {
+      max-width: 680px;
+      width: 100%;
+      background: #1e293b;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.4rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #1d4ed8; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    label { font-size: 0.9rem; color: #cbd5e1; cursor: pointer; }
+    pre {
+      background: #090d16;
+      border: 1px solid #334155;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      font-size: 0.85rem;
+    }
+    .status { margin: 1rem 0; color: #94a3b8; font-size: 0.95rem; }
+    .error { color: #f87171; }
+    .success { color: #34d399; }
+  </style>
+
+  <!-- Load script from hosted url -->
+  <script src="https://reostech.web.app/cg"></script>
+</head>
+<body>
+  <div class="box">
+    <h2>Reos Guard Tester</h2>
+
+    <div class="controls">
+      <button id="btn" onclick="testClient()">Solve Challenge</button>
+      <label>
+        <input type="checkbox" id="mockMode" checked /> Use Mock Challenge (bypass sandbox CORS)
+      </label>
+    </div>
+
+    <div class="status" id="status">Status: Idle</div>
+
+    <h4>Result Token (Base64)</h4>
+    <pre id="token">Waiting...</pre>
+
+    <h4>Decoded Payload</h4>
+    <pre id="payload">Waiting...</pre>
+  </div>
+
+  <script>
+    async function testClient() {
+      const btn = document.getElementById('btn');
+      const status = document.getElementById('status');
+      const tokenPre = document.getElementById('token');
+      const payloadPre = document.getElementById('payload');
+      const useMock = document.getElementById('mockMode').checked;
+
+      btn.disabled = true;
+      status.innerHTML = 'Status: <span style="color:#60a5fa">Computing Proof of Work...</span>';
+      tokenPre.textContent = 'Working...';
+      payloadPre.textContent = 'Working...';
+
+      const startTime = performance.now();
+
+      try {
+        let token;
+
+        if (useMock) {
+          // Mock data format expected by ReosClient
+          const mockChallenge = {
+            nonce: crypto.randomUUID(),
+            difficulty: 3,
+            timestamp: Date.now()
+          };
+          
+          // Compute using the same logic
+          const targetPrefix = '0'.repeat(mockChallenge.difficulty);
+          let counter = 0;
+          const encoder = new TextEncoder();
+
+          while (true) {
+            const data = encoder.encode(`${mockChallenge.nonce}:${counter}`);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            if (hashHex.startsWith(targetPrefix)) break;
+            counter++;
+          }
+
+          const payload = {
+            challenge: mockChallenge,
+            pow: { counter },
+            telemetry: {
+              hardwareConcurrency: navigator.hardwareConcurrency || 4,
+              webdriver: !!navigator.webdriver,
+              screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`
+            }
+          };
+
+          token = btoa(JSON.stringify(payload));
+        } else {
+          // Direct fetch from remote URL
+          const client = new ReosClient('https://reostech.web.app/reos-guard');
+          token = await client.solve();
+        }
+
+        const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+        const rawPayload = JSON.parse(atob(token));
+
+        status.innerHTML = `Status: <span class="success">Solved in ${duration}s! (Counter: ${rawPayload.pow.counter})</span>`;
+        tokenPre.textContent = token;
+        payloadPre.textContent = JSON.stringify(rawPayload, null, 2);
+      } catch (err) {
+        status.innerHTML = `Status: <span class="error">Error: ${err.message}</span>`;
+        tokenPre.textContent = 'Execution failed.';
+        payloadPre.textContent = (err.message.includes('Failed to fetch') 
+          ? 'CORS Error: The request was blocked by the browser. Enable "Use Mock Challenge" above or configure CORS on Firebase.' 
+          : err.stack || err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

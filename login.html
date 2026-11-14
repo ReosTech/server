@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reos - Sign In</title>
+    <script src="/reos-guard" defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="icon" href="reo.jpg">
+    <style>
+        body {
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background-color: #ffffff;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: -0.5px;
+        }
+
+        .home-btn {
+            padding: 8px 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: none;
+            color: #475569;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .home-btn:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f1f5f9;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            background-color: #ffffff;
+            color: #0f172a;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .divider span {
+            padding: 0 12px;
+        }
+
+        #googleBtnContainer {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .register-text {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .register-text a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .register-text a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Reos</div>
+        <button class="home-btn" onclick="window.location.href='/'">Home</button>
+    </header>
+
+    <div class="main-container">
+        <div class="login-card">
+            <h1 id="mainTitle">Sign In</h1>
+            <div class="subtitle" id="mainSubtitle">Enter your developer credentials to enter the workspace.</div>
+
+            <!-- Standard HTML form submission compatible with server redirects -->
+            <form id="authForm" action="https://server-jdqc.onrender.com/auth/workflow" method="POST">
+                <input type="hidden" name="auth_action" id="authAction" value="login">
+                <input type="hidden" name="reos_token" id="reosToken" value="">
+
+                <div class="form-group" id="emailGroup" style="display: none;">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="name@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
+            </form>
+
+            <div class="divider"><span>OR</span></div>
+
+            <div id="googleBtnContainer"></div>
+
+            <div class="register-text" id="toggleModeContainer">
+                Don't have an account? <a onclick="switchToRegister()">Register Here</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const GOOGLE_CLIENT_ID = "707202325366-9j72jt8a1qcsi31k04965lmujjf3n27q.apps.googleusercontent.com";
+
+    window.onload = function () {
+        if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById("googleBtnContainer"),
+                { 
+                    theme: "outline", 
+                    size: "large", 
+                    shape: "pill", 
+                    width: 340,
+                    text: "signin_with"
+                }
+            );
+        }
+    };
+
+    async function handleCredentialResponse(response) {
+        try {
+            const res = await fetch("https://server-jdqc.onrender.com/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: response.credential })
+            });
+            const data = await res.json();
+            if (data.status === "success" || data.redirect) {
+                window.location.href = data.redirect || "/console";
+            } else {
+                alert("Google Sign-In failed: " + (data.message || "Invalid Token"));
+            }
+        } catch (err) {
+            console.error("Google Auth error:", err);
+            alert("Unable to verify Google credentials.");
+        }
+    }
+
+    let currentMode = "login";
+
+    function switchToRegister() {
+        currentMode = "register";
+        document.getElementById('mainTitle').innerText = "Register";
+        document.getElementById('mainSubtitle').innerText = "Create a new developer profile to join the workspace.";
+        document.getElementById('authAction').value = "register";
+        document.getElementById('emailGroup').style.display = "block";
+        document.getElementById('email').setAttribute('required', 'required');
+        document.getElementById('submitBtn').innerText = "Create Account";
+        document.getElementById('toggleModeContainer').innerHTML = 'Already have an account? <a onclick="switchToLogin()">Sign In Here</a>';
+    }
+
+    function switchToLogin() {
+        currentMode = "login";
+        document.getElementById('mainTitle').innerText = "Sign In";
+        document.getElementById('mainSubtitle').innerText = "Enter your developer credentials to enter the workspace.";
+        document.getElementById('authAction').value = "login";
+        document.getElementById('emailGroup').style.display = "none";
+        document.getElementById('email').removeAttribute('required');
+        document.getElementById('submitBtn').innerText = "Sign In";
+        document.getElementById('toggleModeContainer').innerHTML = 'Don\'t have an account? <a onclick="switchToRegister()">Register Here</a>';
+    }
+
+    // Intercept submit to inject the security token, then let standard form submit take over
+    document.getElementById('authForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = this;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Securing...";
+
+        try {
+            const res = await fetch('/api/reos/challenge', { method: 'POST' });
+            const data = await res.json();
+            document.getElementById('reosToken').value = data.challenge || data.token || JSON.stringify(data);
+        } catch (err) {
+            console.warn("Challenge fetch fallback triggered", err);
+            document.getElementById('reosToken').value = "fallback_token";
+        }
+
+        // Submits natively via standard POST, letting the server handle session and redirects cleanly
+        HTMLFormElement.prototype.submit.call(form);
+    });
+    </script>
+<script type="module" src="/firejs"></script>
+</body>
+</html>

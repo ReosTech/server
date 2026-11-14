@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reos</title>
+    <link rel="icon" type="image/jpg" href="/reo.jpg">
+    <meta name="google-site-verification" content="6jYLe2quorwO6rEqtr_Drewq7-aUzrM8B2KpEtBLNdE" />
+    <style>
+        /* Modern Reset & Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f9fafb;
+        }
+
+        /* Navigation with Frosted Glass Look */
+        header {
+            background-color: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            color: #4b5563;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .hero-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #1e3a8a;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #1e40af;
+            margin-bottom: 2rem;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .cta-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .cta-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Features Section */
+        .features {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 3rem;
+            color: #111827;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Frosted Glass Cards (Optional Upgrade) */
+        .card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(229, 231, 235, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .card h3 {
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .card p {
+            color: #4b5563;
+        }
+
+        /* Interactive Counter Section */
+        .interactive-section {
+            background-color: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .counter-box {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #f3f4f6;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .counter-val {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 1rem 0;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #111827;
+            color: #9ca3af;
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.25rem; }
+            .nav-container { flex-direction: column; gap: 1rem; }
+            .nav-links a { margin: 0 0.75rem; }
+        }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZQ11ET1VX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'G-0ZQ11ET1VX');
+        </script>
+</head>
+<body>
+
+    <!-- NAV BAR -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo">Reos</a>
+            <nav class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#interactive">Interactive</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-container">
+            <h1>Welcome</h1>
+            <p>Clean, fully responsive, and highly customizable. Built completely inside a single workspace so you can launch instantly.</p>
+            <button class="cta-btn" onclick="window.location.href='/pg2.html'">Get Started Now</button>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section id="features" class="features">
+        <h2 class="section-title">Why This Works Perfectly</h2>
+        <div class="grid">
+            <div class="card">
+                <span class="card-icon">🚀</span>
+                <h3>Zero Latency</h3>
+                <p>Because everything is loaded in one workspace, you can experience instantaneous rendering speeds.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">📱</span>
+                <h3>Fully Responsive</h3>
+                <p>Designed from the ground up to look beautiful on mobile phones, tablets, laptops, and desktop screens.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">🛠️</span>
+                <h3>Easy Editing</h3>
+                <p>Open this file in any basic text editor, change the words, and your new project is ready to host.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTERACTIVE JS SECTION -->
+    <section id="interactive" class="interactive-section">
+        <div class="counter-box">
+            <h3>Live Demo Counter</h3>
+            <p>Proof that Javascript is alive and working:</p>
+            <div class="counter-val" id="counter">0</div>
+            <button class="cta-btn" onclick="incrementCounter()">Click to Increase</button>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 Reos. All Rights Reserved</p>
+    </footer>
+
+    <!-- JAVASCRIPT ACTIONS -->
+    <script>
+        let count = 0;
+        function incrementCounter() {
+            count++;
+            document.getElementById('counter').innerText = count;
+        }
+
+        function celebrate() {
+            alert("Celebrating!");
+        }
+    </script>
+<script type="module" src="/firejs"></script>
+</body>
+</html>

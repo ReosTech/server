@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reos Forms - My Forms & Responses</title>
+  <link rel="icon" type="image/jpg" href="/reo.jpg">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">R</div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-800">Reos Forms <span class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Dashboard</span></h1>
+    </div>
+    <div id="userBadge" class="text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
+      Checking Account...
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl w-full mx-auto p-6 space-y-6 flex-1">
+    
+    <!-- VIEW 1: FORM TILES SELECTION -->
+    <div id="formSelectionView" class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Your Forms</h2>
+        <p class="text-xs text-slate-400 mt-1">Select a form below to view its collected responses.</p>
+      </div>
+
+      <div id="formsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamically injected form tiles -->
+      </div>
+
+      <div id="noFormsState" class="hidden bg-white p-12 rounded-xl border border-slate-200 text-center text-slate-400 text-sm">
+        You haven't created any forms yet or none match your username.
+      </div>
+    </div>
+
+    <!-- VIEW 2: RESPONSES TABLE CONTAINER -->
+    <div id="responsesView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <button onclick="backToForms()" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center space-x-1 mb-2">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> <span>Back to Forms</span>
+          </button>
+          <h2 id="formTitle" class="text-2xl font-bold text-slate-800">Loading Form...</h2>
+          <p id="formDesc" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span id="responseCount" class="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg border border-emerald-200">0 Responses</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table id="responsesTable" class="w-full text-left border-collapse text-sm">
+            <thead id="tableHeader" class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider"></thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+          </table>
+        </div>
+        <div id="emptyState" class="hidden p-12 text-center text-slate-400 text-sm">
+          No responses submitted for this form yet.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MANDATORY LOGIN MODAL -->
+  <div id="authModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-100 text-center space-y-5">
+      <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+        <i data-lucide="lock" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-slate-800">Reos Account Required</h2>
+        <p class="text-xs text-slate-500 mt-1">Please enter your Reos username to view your forms dashboard.</p>
+      </div>
+
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-3 pt-2">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-medium text-sm">@</span>
+          <input type="text" id="userInput" required placeholder="username" 
+            class="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white transition" />
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md transition">
+          View Dashboard
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const user = urlParams.get('user');
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+
+      if (!user || user.trim() === "") {
+        window.location.replace('/login.html')
+      }
+
+      document.getElementById('userBadge').textContent = `Account: @${user}`;
+      loadUserForms();
+    });
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('userInput').value.trim();
+      if (username) {
+        window.location.search = `?user=${encodeURIComponent(username)}`;
+      }
+    }
+
+    async function loadUserForms() {
+      try {
+        // Fetch forms.json directly from the static directory
+        const res = await fetch(`/forms.json?t=${Date.now()}`);
+        if (!res.ok) {
+          throw new Error("forms.json not found or empty.");
+        }
+        const formsDb = await res.json();
+
+        // Filter forms matching the active user
+        const userForms = Object.values(formsDb).filter(f => 
+          f.userId && f.userId.trim().toLowerCase() === user.trim().toLowerCase()
+        );
+
+        renderFormTiles(userForms);
+      } catch (err) {
+        console.error(err);
+        renderFormTiles([]);
+      }
+    }
+
+    function renderFormTiles(forms) {
+      const grid = document.getElementById('formsGrid');
+      grid.innerHTML = "";
+
+      if (!forms || forms.length === 0) {
+        document.getElementById('noFormsState').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('noFormsState').classList.add('hidden');
+
+      forms.forEach(form => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer transition flex flex-col justify-between space-y-4";
+        card.onclick = () => selectForm(form.id);
+
+        card.innerHTML = `
+          <div>
+            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-3">
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-bold text-slate-800 text-lg">${form.title}</h3>
+            <p class="text-xs text-slate-400 mt-1 line-clamp-2">${form.description || 'No description provided.'}</p>
+          </div>
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
+            <span>${form.fields ? form.fields.length : 0} Fields</span>
+            <span class="text-blue-600 font-semibold flex items-center space-x-1"><span>View Responses</span> &rarr;</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    async function selectForm(formId) {
+      try {
+        const res = await fetch(`/api/forms/responses/${formId}?user=${encodeURIComponent(user)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('formSelectionView').classList.add('hidden');
+          document.getElementById('responsesView').classList.remove('hidden');
+          renderResponsesTable(data.form, data.submissions);
+        } else {
+          alert("Error: " + data.message);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to fetch form responses.");
+      }
+    }
+
+    function backToForms() {
+      document.getElementById('responsesView').classList.add('hidden');
+      document.getElementById('formSelectionView').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function renderResponsesTable(form, submissions) {
+      document.getElementById('formTitle').textContent = form.title;
+      document.getElementById('formDesc').textContent = form.description || "";
+      document.getElementById('responseCount').textContent = `${submissions.length} Responses`;
+
+      const thead = document.getElementById('tableHeader');
+      const tbody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+
+      if (submissions.length === 0) {
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      let headerHtml = `<th class="p-4 font-semibold">Submitted At</th>`;
+      form.fields.forEach(field => {
+        headerHtml += `<th class="p-4 font-semibold">${field.label}</th>`;
+      });
+      thead.innerHTML = `<tr>${headerHtml}</tr>`;
+
+      let rowsHtml = "";
+      submissions.forEach(sub => {
+        let dateStr = new Date(sub.submittedAt).toLocaleString();
+        rowsHtml += `<tr class="hover:bg-slate-50/50 transition">`;
+        rowsHtml += `<td class="p-4 text-xs text-slate-400 whitespace-nowrap">${dateStr}</td>`;
+
+        form.fields.forEach(field => {
+          let answer = sub.answers[field.id];
+          if (Array.isArray(answer)) {
+            answer = answer.join(', ');
+          }
+          rowsHtml += `<td class="p-4">${answer || '<span class="text-slate-300 italic">No answer</span>'}</td>`;
+        });
+
+        rowsHtml += `</tr>`;
+      });
+
+      tbody.innerHTML = rowsHtml;
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

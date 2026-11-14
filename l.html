@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu 26.04 LTS Simulation</title>
+    <style>
+        :root {
+            --accent: #E95420;
+            --aubergine: #77216F;
+            --dark-bg: #1e1e1e;
+            --panel-bg: rgba(18, 18, 18, 0.94);
+            --window-bg: #2d2d2d;
+            --window-header: #1e1e1e;
+            --text-color: #f5f5f5;
+            --card-bg: #383838;
+            --sidebar-bg: #252525;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #000; 
+            color: var(--text-color);
+            transition: filter 0.2s ease;
+        }
+        
+        /* Boot & Update Screens */
+        #update-screen {
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            height: 100%; 
+            background: linear-gradient(135deg, var(--aubergine) 0%, var(--accent) 100%); 
+        }
+        .spinner {
+            width: 44px; 
+            height: 44px; 
+            border: 4px solid rgba(255, 255, 255, 0.25); 
+            border-top: 4px solid #fff;
+            border-radius: 50%; 
+            animation: spin 0.8s linear infinite; 
+            margin-bottom: 24px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #boot-screen {
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            height: 100%; 
+            background: #111;
+        }
+        .dots-container { display: flex; gap: 12px; }
+        .dot { 
+            width: 12px; height: 12px; border-radius: 50%; 
+            background: var(--accent); 
+            animation: pulse 1.4s infinite ease-in-out; 
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+
+        /* Desktop Layout */
+        #desktop {
+            display: none; 
+            width: 100vw;
+            height: 100vh; 
+            flex-direction: column;
+            background: radial-gradient(circle at 60% 40%, var(--aubergine) 0%, #2C001E 65%, #11000C 100%);
+            position: relative;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            height: 28px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 10000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .top-bar-section { display: flex; align-items: center; gap: 6px; }
+        .top-bar-item {
+            cursor: pointer;
+            padding: 3px 10px;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .top-bar-item:hover { background: rgba(255, 255, 255, 0.15); }
+
+        /* Calendar Popover */
+        #calendar-menu {
+            display: none;
+            position: absolute;
+            top: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            background: #2b2b2b;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            padding: 16px;
+            z-index: 10001;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .cal-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-size: 12px; }
+        .cal-day-label { color: #888; font-weight: 600; }
+        .cal-day { padding: 6px; border-radius: 50%; cursor: pointer; }
+        .cal-day:hover { background: rgba(255,255,255,0.1); }
+        .cal-day.active { background: var(--accent); color: #fff; font-weight: bold; }
+
+        /* System Status Menu */
+        #status-menu {
+            display: none;
+            position: absolute;
+            top: 34px;
+            right: 8px;
+            width: 290px;
+            background: #2b2b2b;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            padding: 16px;
+            z-index: 10001;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .slider-row { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+        .slider-row input[type="range"] { flex-grow: 1; accent-color: var(--accent); cursor: pointer; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .status-actions { display: flex; justify-content: space-between; border-top: 1px solid #3a3a3a; padding-top: 12px; }
+        .action-btn { 
+            background: #383838; border: 1px solid rgba(255,255,255,0.08); color: #fff; padding: 6px 14px; 
+            border-radius: 6px; cursor: pointer; font-size: 12px; transition: background 0.15s;
+        }
+        .action-btn:hover { background: var(--accent); }
+
+        /* Main Workspace */
+        #workspace { flex-grow: 1; display: flex; position: relative; overflow: hidden; }
+
+        /* Dock */
+        #dock {
+            width: 58px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
+            gap: 10px;
+            z-index: 9000;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+        }
+        .dock-icon {
+            width: 44px;
+            height: 44px;
+            min-height: 44px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.15s, background 0.15s;
+        }
+        .dock-icon:hover { transform: scale(1.08); background: rgba(255, 255, 255, 0.12); }
+        .dock-icon.active::before {
+            content: ''; position: absolute; left: 2px; width: 4px; height: 16px;
+            background: var(--accent); border-radius: 0 4px 4px 0;
+        }
+        .dock-spacer { flex-grow: 1; }
+
+        /* Desktop Icons Shortcuts */
+        #desktop-icons {
+            position: absolute; top: 16px; left: 74px;
+            display: flex; flex-direction: column; flex-wrap: wrap; 
+            max-height: calc(100vh - 60px); gap: 16px 20px; align-content: flex-start;
+            z-index: 10;
+        }
+        .desktop-icon {
+            width: 80px; display: flex; flex-direction: column; align-items: center;
+            gap: 6px; cursor: pointer; padding: 8px 4px; border-radius: 8px;
+            transition: background 0.15s;
+        }
+        .desktop-icon:hover { background: rgba(255, 255, 255, 0.18); }
+        .desktop-icon span { 
+            font-size: 11px; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            word-break: break-word; line-height: 1.2;
+        }
+
+        /* Desktop Windows */
+        .window {
+            position: absolute;
+            background: var(--window-bg);
+            border-radius: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            min-width: 360px;
+            min-height: 240px;
+        }
+        .window.maximized {
+            top: 0 !important; left: 58px !important;
+            width: calc(100vw - 58px) !important;
+            height: calc(100vh - 28px) !important;
+            border-radius: 0;
+        }
+        .title-bar {
+            background: var(--window-header);
+            color: #dedede; height: 38px; padding: 0 12px;
+            font-size: 13px; font-weight: 500;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+            cursor: move;
+            shrink: 0;
+        }
+        .controls { display: flex; gap: 8px; }
+        .btn {
+            width: 16px; height: 16px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            background: #3e3e3e; font-size: 10px; color: #aaa; cursor: pointer;
+        }
+        .btn:hover { background: #505050; color: #fff; }
+        .btn-close:hover { background: var(--accent); color: #fff; }
+
+        .window-content { flex-grow: 1; display: flex; overflow: hidden; background: #1e1e1e; position: relative; }
+
+        /* Embed IFrame Wrapper */
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        /* App Window Browser Header */
+        .browser-toolbar {
+            height: 36px; background: #252525; border-bottom: 1px solid #333;
+            display: flex; align-items: center; padding: 0 8px; gap: 8px; shrink: 0;
+        }
+        .browser-url-bar {
+            flex-grow: 1; background: #1a1a1a; border: 1px solid #444; border-radius: 4px;
+            color: #eee; padding: 4px 10px; font-size: 12px; outline: none;
+        }
+
+        /* Sidebars & Main Panes */
+        .sidebar {
+            width: 190px; background: var(--sidebar-bg); border-right: 1px solid rgba(0,0,0,0.3);
+            padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; shrink: 0;
+        }
+        .sidebar-item {
+            padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; color: #ccc;
+            display: flex; align-items: center; gap: 10px; transition: background 0.15s;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.08); }
+        .sidebar-item.active { background: var(--accent); color: #fff; font-weight: 500; }
+        .main-pane { flex-grow: 1; padding: 24px; overflow-y: auto; color: #e0e0e0; display: flex; flex-direction: column; }
+
+        /* Terminal Pane */
+        .terminal-container {
+            background: #300A24; color: #4E9A06; font-family: "Ubuntu Mono", monospace;
+            padding: 12px; flex-grow: 1; font-size: 14px; overflow-y: auto;
+            display: flex; flex-direction: column; line-height: 1.4;
+        }
+        .terminal-output { white-space: pre-wrap; word-break: break-all; }
+        .terminal-input-line { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .terminal-prompt { color: #8AE234; font-weight: bold; }
+        .terminal-path { color: #729FCF; font-weight: bold; }
+        .terminal-input {
+            background: transparent; border: none; outline: none;
+            color: #EEEEEC; font-family: inherit; font-size: inherit; flex-grow: 1;
+        }
+
+        /* App Store Center */
+        .store-header-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .search-input {
+            background: #2b2b2b; border: 1px solid var(--border-color); border-radius: 6px;
+            padding: 8px 14px; color: #fff; font-size: 13px; outline: none; width: 240px;
+        }
+        .search-input:focus { border-color: var(--accent); }
+        .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .cat-pill {
+            padding: 4px 12px; background: #333; border-radius: 14px; font-size: 12px;
+            cursor: pointer; transition: background 0.15s; color: #bbb;
+        }
+        .cat-pill.active, .cat-pill:hover { background: var(--accent); color: #fff; }
+
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 16px;
+        }
+        .app-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.15s;
+        }
+        .app-card:hover { transform: translateY(-2px); }
+        .app-card-title { font-weight: 600; font-size: 14px; }
+        .app-card-desc { font-size: 11px; color: #aaa; flex-grow: 1; line-height: 1.3; }
+        .app-install-btn {
+            background: var(--accent); color: #fff; border: none; padding: 6px 14px;
+            border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
+            width: 100%; margin-top: 6px; transition: background 0.15s;
+        }
+        .app-install-btn.installed { background: #4a4a4a; }
+        .app-install-btn.installed:hover { background: #cc3333; }
+
+        /* Text Editor */
+        .editor-textarea {
+            width: 100%; height: 100%; background: #1b1b1b; color: #f8f8f2;
+            border: none; padding: 16px; font-family: "Ubuntu Mono", monospace;
+            font-size: 14px; outline: none; resize: none;
+        }
+
+        /* App Launcher Grid */
+        #app-grid {
+            display: none; position: absolute; top: 28px; left: 58px;
+            width: calc(100vw - 58px); height: calc(100vh - 28px);
+            background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px);
+            z-index: 9999; padding: 40px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 24px; align-content: start; overflow-y: auto;
+        }
+        .app-grid-item {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; padding: 12px; border-radius: 12px; transition: background 0.2s;
+        }
+        .app-grid-item:hover { background: rgba(255, 255, 255, 0.12); }
+        .app-grid-item span { font-size: 12px; text-align: center; }
+
+        /* SVG Utility */
+        .icon-svg {
+            width: 24px; height: 24px; fill: none; stroke: currentColor;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PHASE 1: Update Screen -->
+    <div id="update-screen">
+        <div class="spinner"></div>
+        <h1 style="font-weight: 300; margin: 0 0 8px 0; font-size: 28px;">Installing System Updates</h1>
+        <p style="margin: 0; opacity: 0.8; font-size: 14px;">Upgrading system to Ubuntu 26.04 LTS (Resolute Raccoon)...</p>
+    </div>
+
+    <!-- PHASE 2: Boot Screen -->
+    <div id="boot-screen">
+        <h1 style="color: white; font-weight: 300; margin-bottom: 40px; letter-spacing: 3px; font-size: 36px;">ubuntu</h1>
+        <div class="dots-container">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: Desktop Environment -->
+    <div id="desktop">
+        <!-- Top Bar -->
+        <div id="top-bar">
+            <div class="top-bar-section">
+                <div class="top-bar-item" style="font-weight: 700;" onclick="toggleAppGrid()">Activities</div>
+                <div class="top-bar-item" onclick="openWindow('term-window')">Terminal</div>
+                <div class="top-bar-item" onclick="openWindow('software-window')">App Store</div>
+                <div class="top-bar-item" onclick="openWindow('editor-window')">Text Editor</div>
+            </div>
+            <div class="top-bar-section">
+                <div class="top-bar-item" id="clock-widget" onclick="toggleCalendarMenu()">Fri Sep 25 13:15</div>
+            </div>
+            <div class="top-bar-section">
+                <div class="top-bar-item" onclick="toggleStatusMenu()" style="display: flex; gap: 8px; align-items: center;">
+                    <svg class="icon-svg" style="width: 14px; height: 14px;" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"/></svg>
+                    <svg class="icon-svg" style="width: 14px; height: 14px;" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <svg class="icon-svg" style="width: 14px; height: 14px;" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0 M12 2v10"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Menu -->
+        <div id="calendar-menu">
+            <div class="cal-header">
+                <span id="cal-month-year">September 2026</span>
+            </div>
+            <div class="cal-grid">
+                <span class="cal-day-label">Su</span><span class="cal-day-label">Mo</span><span class="cal-day-label">Tu</span>
+                <span class="cal-day-label">We</span><span class="cal-day-label">Th</span><span class="cal-day-label">Fr</span>
+                <span class="cal-day-label">Sa</span>
+                <span class="cal-day">30</span><span class="cal-day">31</span><span class="cal-day">1</span><span class="cal-day">2</span><span class="cal-day">3</span><span class="cal-day">4</span><span class="cal-day">5</span>
+                <span class="cal-day">6</span><span class="cal-day">7</span><span class="cal-day">8</span><span class="cal-day">9</span><span class="cal-day">10</span><span class="cal-day">11</span><span class="cal-day">12</span>
+                <span class="cal-day">13</span><span class="cal-day">14</span><span class="cal-day">15</span><span class="cal-day">16</span><span class="cal-day">17</span><span class="cal-day">18</span><span class="cal-day">19</span>
+                <span class="cal-day">20</span><span class="cal-day">21</span><span class="cal-day">22</span><span class="cal-day">23</span><span class="cal-day">24</span><span class="cal-day active">25</span><span class="cal-day">26</span>
+                <span class="cal-day">27</span><span class="cal-day">28</span><span class="cal-day">29</span><span class="cal-day">30</span><span class="cal-day">1</span><span class="cal-day">2</span><span class="cal-day">3</span>
+            </div>
+        </div>
+
+        <!-- System Tray Menu -->
+        <div id="status-menu">
+            <div class="slider-row">
+                <svg class="icon-svg" style="width:16px; height:16px;" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" oninput="updateVolume(this.value)">
+            </div>
+            <div class="slider-row">
+                <svg class="icon-svg" style="width:16px; height:16px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <input type="range" id="brightness-slider" min="30" max="100" value="100" oninput="updateBrightness(this.value)">
+            </div>
+            <div class="toggle-row">
+                <span>Wi-Fi Network</span>
+                <input type="chekbox" id="wifi-toggle" checked onchange="saveState()">
+            </div>
+            <div class="toggle-row">
+                <span>Dark Mode</span>
+                <input type="checkbox" id="dark-mode-toggle" checked onchange="saveState()">
+            </div>
+            <div class="status-actions">
+                <button class="action-btn" onclick="openWindow('settings-window')">Settings</button>
+                <button class="action-btn" onclick="restartSystem()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div id="workspace">
+            <!-- Left Ubuntu Dock -->
+            <div id="dock">
+                <div class="dock-icon" id="dock-info" onclick="toggleWindow('info-window')" title="Files & System">
+                    <svg class="icon-svg" style="color: var(--accent);" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="dock-icon" id="dock-term" onclick="toggleWindow('term-window')" title="Terminal">
+                    <svg class="icon-svg" style="color: #4E9A06;" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                </div>
+                <div class="dock-icon" id="dock-software" onclick="toggleWindow('software-window')" title="Ubuntu App Store">
+                    <svg class="icon-svg" style="color: #3584E4;" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                </div>
+                <div class="dock-icon" id="dock-editor" onclick="toggleWindow('editor-window')" title="Text Editor">
+                    <svg class="icon-svg" style="color: #E5A50A;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="dock-icon" id="dock-settings" onclick="toggleWindow('settings-window')" title="Settings">
+                    <svg class="icon-svg" style="color: #729FCF;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </div>
+                <div id="dock-dynamic-container"></div>
+                <div class="dock-spacer"></div>
+                <div class="dock-icon" onclick="toggleAppGrid()" title="Show Applications">
+                    <svg class="icon-svg" style="color: #fff;" viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="4"/><rect x="10" y="3" width="4" height="4"/><rect x="17" y="3" width="4" height="4"/><rect x="3" y="10" width="4" height="4"/><rect x="10" y="10" width="4" height="4"/><rect x="17" y="10" width="4" height="4"/><rect x="3" y="17" width="4" height="4"/><rect x="10" y="17" width="4" height="4"/><rect x="17" y="17" width="4" height="4"/></svg>
+                </div>
+            </div>
+
+            <!-- Dynamic Desktop Shortcuts Layout -->
+            <div id="desktop-icons"></div>
+
+            <!-- Application Launcher Grid Overlay -->
+            <div id="app-grid"></div>
+
+            <!-- WINDOW 1: System Info / Files Manager -->
+            <div class="window" id="info-window" style="top: 50px; left: 160px; width: 740px; height: 480px; display: none;">
+                <div class="title-bar">
+                    <span>Files & System Manager</span>
+                    <div class="controls">
+                        <span class="btn" onclick="minimizeWindow('info-window')">—</span>
+                        <span class="btn" onclick="maximizeWindow('info-window')">❏</span>
+                        <span class="btn btn-close" onclick="closeWindow('info-window')">✕</span>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <div class="sidebar">
+                        <div class="sidebar-item active" onclick="switchTab(this, 'tab-files')">Files (Home)</div>
+                        <div class="sidebar-item" onclick="switchTab(this, 'tab-system')">System Info</div>
+                        <div class="sidebar-item" onclick="switchTab(this, 'tab-users')">User Accounts</div>
+                    </div>
+                    <div class="main-pane">
+                        <div id="tab-files" class="tab-pane">
+                            <h3 style="margin-top: 0; color: var(--accent);">Home Directory</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 16px;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;" onclick="alert('Opening Documents...')">
+                                    <svg class="icon-svg" style="width:40px; height:40px; color:#729FCF;" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                                    <span style="font-size:12px;">Documents</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;" onclick="alert('Opening Downloads...')">
+                                    <svg class="icon-svg" style="width:40px; height:40px; color:#729FCF;" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                                    <span style="font-size:12px;">Downloads</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;" onclick="openWindow('editor-window')">
+                                    <svg class="icon-svg" style="width:40px; height:40px; color:#ccc;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                                    <span style="font-size:12px;">notes.txt</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-system" class="tab-pane" style="display:none;">
+                            <h2 style="color: var(--accent); font-weight: 300; margin-top: 0;">Ubuntu 26.04 LTS</h2>
+                            <p style="color: #aaa; margin-bottom: 20px;">Resolute Raccoon (64-bit Web OS)</p>
+                            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; font-size: 14px;">
+                                <span style="color: #888;">Processor:</span><span>Next-Gen Web Engine × 16</span>
+                                <span style="color: #888;">Memory:</span><span>32.0 GB RAM</span>
+                                <span style="color: #888;">App Subsystem:</span><span>Live Embedded iFrames</span>
+                            </div>
+                        </div>
+                        <div id="tab-users" class="tab-pane" style="display:none;">
+                            <h3>User Accounts</h3>
+                            <p style="color:#aaa;">Logged in as: <strong>user (Administrator)</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 2: Interactive Terminal -->
+            <div class="window" id="term-window" style="top: 90px; left: 240px; width: 700px; height: 440px; display: none;">
+                <div class="title-bar">
+                    <span>user@resolute-raccoon: ~</span>
+                    <div class="controls">
+                        <span class="btn" onclick="minimizeWindow('term-window')">—</span>
+                        <span class="btn" onclick="maximizeWindow('term-window')">❏</span>
+                        <span class="btn btn-close" onclick="closeWindow('term-window')">✕</span>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <div class="terminal-container" onclick="document.getElementById('term-input').focus()">
+                        <div class="terminal-output" id="term-output">Welcome to Ubuntu 26.04 LTS (Resolute Raccoon)
+Type 'help' or 'apt help' to view commands. Extremely large iframe web app library active.
+</div>
+                        <div class="terminal-input-line">
+                            <span class="terminal-prompt">user@resolute-raccoon</span>:<span class="terminal-path">~</span>$&nbsp;
+                            <input type="text" class="terminal-input" id="term-input" autocomplete="off" spellcheck="false">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 3: Software Center -->
+            <div class="window" id="software-window" style="top: 60px; left: 190px; width: 840px; height: 520px; display: none;">
+                <div class="title-bar">
+                    <span>Ubuntu App Store</span>
+                    <div class="controls">
+                        <span class="btn" onclick="minimizeWindow('software-window')">—</span>
+                        <span class="btn" onclick="maximizeWindow('software-window')">❏</span>
+                        <span class="btn btn-close" onclick="closeWindow('software-window')">✕</span>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <div class="sidebar">
+                        <div class="sidebar-item active" onclick="filterStoreTab('explore', this)">Explore</div>
+                        <div class="sidebar-item" onclick="filterStoreTab('installed', this)">Installed</div>
+                        <div class="sidebar-item" onclick="filterStoreTab('updates', this)">Updates</div>
+                    </div>
+                    <div class="main-pane">
+                        <div class="store-header-bar">
+                            <input type="text" id="store-search" class="search-input" placeholder="Search 28+ web apps..." oninput="renderStoreGrid()">
+                            <div class="cat-pills">
+                                <span class="cat-pill active" onclick="filterCategory('all', this)">All</span>
+                                <span class="cat-pill" onclick="filterCategory('dev', this)">Development</span>
+                                <span class="cat-pill" onclick="filterCategory('media', this)">Media</span>
+                                <span class="cat-pill" onclick="filterCategory('internet', this)">Internet</span>
+                                <span class="cat-pill" onclick="filterCategory('games', this)">Games</span>
+                                <span class="cat-pill" onclick="filterCategory('utilities', this)">Utilities</span>
+                            </div>
+                        </div>
+                        <div class="store-grid" id="store-grid-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 4: Text Editor -->
+            <div class="window" id="editor-window" style="top: 130px; left: 320px; width: 580px; height: 380px; display: none;">
+                <div class="title-bar">
+                    <span>Text Editor - notes.txt</span>
+                    <div class="controls">
+                        <span class="btn" onclick="minimizeWindow('editor-window')">—</span>
+                        <span class="btn" onclick="maximizeWindow('editor-window')">❏</span>
+                        <span class="btn btn-close" onclick="closeWindow('editor-window')">✕</span>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <textarea class="editor-textarea" id="editor-text" placeholder="Type here... Everything is auto-saved in browser cookies/localStorage." oninput="saveState()"></textarea>
+                </div>
+            </div>
+
+            <!-- WINDOW 5: Settings -->
+            <div class="window" id="settings-window" style="top: 70px; left: 200px; width: 680px; height: 440px; display: none;">
+                <div class="title-bar">
+                    <span>Settings</span>
+                    <div class="controls">
+                        <span class="btn" onclick="minimizeWindow('settings-window')">—</span>
+                        <span class="btn" onclick="maximizeWindow('settings-window')">❏</span>
+                        <span class="btn btn-close" onclick="closeWindow('settings-window')">✕</span>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <div class="sidebar">
+                        <div class="sidebar-item active" onclick="switchTab(this, 'set-app')">Appearance</div>
+                        <div class="sidebar-item" onclick="switchTab(this, 'set-disp')">Displays</div>
+                        <div class="sidebar-item" onclick="switchTab(this, 'set-snd')">Sound</div>
+                        <div class="sidebar-item" onclick="switchTab(this, 'set-about')">About System</div>
+                    </div>
+                    <div class="main-pane">
+                        <div id="set-app" class="tab-pane">
+                            <h3 style="margin-top:0;">Accent Color</h3>
+                            <div style="display: flex; gap: 14px; margin-bottom: 24px;">
+                                <div onclick="setAccent('#E95420')" style="width:34px; height:34px; border-radius:50%; background:#E95420; cursor:pointer;"></div>
+                                <div onclick="setAccent('#1AB394')" style="width:34px; height:34px; border-radius:50%; background:#1AB394; cursor:pointer;"></div>
+                                <div onclick="setAccent('#77216F')" style="width:34px; height:34px; border-radius:50%; background:#77216F; cursor:pointer;"></div>
+                                <div onclick="setAccent('#3584E4')" style="width:34px; height:34px; border-radius:50%; background:#3584E4; cursor:pointer;"></div>
+                                <div onclick="setAccent('#F05032')" style="width:34px; height:34px; border-radius:50%; background:#F05032; cursor:pointer;"></div>
+                            </div>
+                        </div>
+                        <div id="set-disp" class="tab-pane" style="display:none;">
+                            <h3 style="margin-top:0;">Display Settings</h3>
+                            <p style="color:#aaa;">Resolution: <strong>1920 × 1080 (16:9)</strong></p>
+                        </div>
+                        <div id="set-snd" class="tab-pane" style="display:none;">
+                            <h3 style="margin-top:0;">Sound Output</h3>
+                            <p style="color:#aaa;">Output Device: <strong>Built-in Web Speakers</strong></p>
+                        </div>
+                        <div id="set-about" class="tab-pane" style="display:none;">
+                            <h3 style="margin-top:0;">About System</h3>
+                            <p style="color:#aaa;">OS Name: Ubuntu 26.04 LTS (iFrame Web Edition)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Window Container for Web App IFrames -->
+            <div id="dynamic-windows-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. EXTREMELY BIG APP DATABASE WITH LIVE IFRAME CONNECTORS ---
+        const APP_DB = {
+            'firefox': { name: 'Firefox Web Browser', cat: 'internet', desc: 'Browse live websites with iframe web engine', color: '#3584E4', url: 'https://www.wikipedia.org' },
+            'code': { name: 'VS Code Web', cat: 'dev', desc: 'Full Visual Studio Code IDE inside web iframe', color: '#1AB394', url: 'https://vscode.dev' },
+            'photopea': { name: 'Photopea (GIMP)', cat: 'media', desc: 'Full Photoshop/GIMP graphic editor web app', color: '#E95420', url: 'https://www.photopea.com' },
+            'calculator': { name: 'Scientific Calculator', cat: 'utilities', desc: 'Interactive graphing & math engine', color: '#888888', url: 'https://www.desmos.com/scientific' },
+            'excalidraw': { name: 'Excalidraw', cat: 'media', desc: 'Hand-drawn diagramming & whiteboard web app', color: '#6965DB', url: 'https://excalidraw.com' },
+            'diagrams': { name: 'Draw.io (Inkscape)', cat: 'media', desc: 'Vector diagramming and flowchart suite', color: '#F05032', url: 'https://app.diagrams.net' },
+            'game2048': { name: '2048 Game', cat: 'games', desc: 'Classic sliding number tile puzzle', color: '#EDC22E', url: 'https://play2048.co' },
+            'duckduckgo': { name: 'DuckDuckGo Search', cat: 'internet', desc: 'Private web search engine', color: '#DE5833', url: 'https://start.duckduckgo.com' },
+            'codepen': { name: 'CodePen Editor', cat: 'dev', desc: 'Frontend HTML/CSS/JS sandbox & editor', color: '#000000', url: 'https://codepen.io/pen/' },
+            'stackblitz': { name: 'StackBlitz IDE', cat: 'dev', desc: 'Instant Fullstack Node.js web development', color: '#1389FD', url: 'https://stackblitz.com/?embed=1' },
+            'wordcloud': { name: 'SoundCloud Web', cat: 'media', desc: 'Stream independent music & audio', color: '#FF5500', url: 'https://soundcloud.com' },
+            'bing-maps': { name: 'OpenStreetMap', cat: 'utilities', desc: 'Interactive world map & navigation app', color: '#7EBF37', url: 'https://www.openstreetmap.org/export/embed.html' },
+            'archive': { name: 'Internet Archive', cat: 'internet', desc: 'Digital library of free books, movies & music', color: '#333333', url: 'https://archive.org' },
+            'emulator': { name: 'Retro Emulator', cat: 'games', desc: 'Play classic arcade games online', color: '#E5A50A', url: 'https://jsdos.io' },
+            'notes-app': { name: 'Standard Notes', cat: 'utilities', desc: 'End-to-end encrypted notes app', color: '#3142A5', url: 'https://app.standardnotes.com' },
+            'rss-reader': { name: 'Feedly Web', cat: 'internet', desc: 'News aggregator & RSS feed reader', color: '#2BB24C', url: 'https://feedly.com' },
+            'math-solver': { name: 'GeoGebra Math', cat: 'utilities', desc: '3D geometry and calculus calculator', color: '#6666FF', url: 'https://www.geogebra.org/calculator' },
+            'vector-editor': { name: 'Vectr Studio', cat: 'media', desc: '2D vector graphics editor', color: '#00D1B2', url: 'https://vectr.com/design' },
+            'music-player': { name: 'Free Music Archive', cat: 'media', desc: 'Explore public domain audio tracks', color: '#D91C5C', url: 'https://freemusicarchive.org' },
+            'chess': { name: 'Lichess Chess', cat: 'games', desc: 'Free open-source chess web app', color: '#FFFFFF', url: 'https://lichess.org/embed' },
+            'typing-test': { name: 'Monkeytype Typing', cat: 'utilities', desc: 'Minimalist typing speed tester', color: '#E2B714', url: 'https://monkeytype.com' },
+            'python-web': { name: 'Python Live Shell', cat: 'dev', desc: 'Run Python 3 directly in browser iframe', color: '#3776AB', url: 'https://pyodide.org/en/stable/console.html' },
+          'sudoku': { name: 'Web Sudoku', cat: 'games', desc: 'Interactive logic puzzle game', color: '#4B6584', url: 'https://www.websudoku.com' },
+            'clock-app': { name: 'World Clock & Timer', cat: 'utilities', desc: 'Precision stopwatch and world timezone clock', color: '#20BF6B', url: 'https://time.is' },
+            'pdf-editor': { name: 'PDFEscape Editor', cat: 'utilities', desc: 'Online PDF viewer and form filler', color: '#EB3B5A', url: 'https://www.pdfescape.com' },
+            'dictionary': { name: 'Wiktionary App', cat: 'internet', desc: 'Free multilingual dictionary', color: '#45AAF2', url: 'https://www.wiktionary.org' },
+            'weather': { name: 'Windy Weather Radar', cat: 'utilities', desc: 'Live global weather satellite & radar map', color: '#0288D1', url: 'https://embed.windy.com' },
+            'radio': { name: 'Radio Garden', cat: 'media', desc: 'Live global satellite radio browser', color: '#10AC84', url: 'https://radio.garden' }
+        };
+
+        // System State Storage
+        let state = {
+            installed: ['firefox', 'code', 'photopea', 'calculator', 'game2048'],
+            accentColor: '#E95420',
+            editorText: 'Hello from Ubuntu 26.04 LTS!\nAll app store installations and desktop icons persist in browser storage.\nAll apps open as embedded iFrames.',
+            volume: 80,
+            brightness: 100,
+            currentCategory: 'all',
+            currentTab: 'explore'
+        };
+
+        function saveState() {
+            state.editorText = document.getElementById('editor-text').value;
+            const serialized = JSON.stringify(state);
+            localStorage.setItem('ubuntu_2604_iframe_state', serialized);
+            document.cookie = `ubuntu_iframe_state=${encodeURIComponent(serialized)};path=/;max-age=31536000`;
+        }
+
+        function loadState() {
+            const stored = localStorage.getItem('ubuntu_2604_iframe_state');
+            if (stored) {
+                try { state = { ...state, ...JSON.parse(stored) }; } catch(e){}
+            }
+            setAccent(state.accentColor);
+            document.getElementById('editor-text').value = state.editorText || '';
+            document.getElementById('volume-slider').value = state.volume || 80;
+            document.getElementById('brightness-slider').value = state.brightness || 100;
+            updateBrightness(state.brightness || 100);
+        }
+
+        // --- 2. DESKTOP & DOCK UI RENDERER ---
+        function renderSystemElements() {
+            const desktopContainer = document.getElementById('desktop-icons');
+            desktopContainer.innerHTML = `
+                <div class="desktop-icon" onclick="openWindow('info-window')">
+                    <svg class="icon-svg" style="width: 36px; height: 36px; color: var(--accent);" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    <span>Home</span>
+                </div>
+            `;
+
+            const dockContainer = document.getElementById('dock-dynamic-container');
+            dockContainer.innerHTML = '';
+
+            const gridContainer = document.getElementById('app-grid');
+            gridContainer.innerHTML = `
+                <div class="app-grid-item" onclick="launchApp('info-window')">
+                    <svg class="icon-svg" style="width:44px; height:44px; color: var(--accent);" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    <span>Files Manager</span>
+                </div>
+                <div class="app-grid-item" onclick="launchApp('term-window')">
+                    <svg class="icon-svg" style="width:44px; height:44px; color: #4E9A06;" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    <span>Terminal</span>
+                </div>
+                <div class="app-grid-item" onclick="launchApp('software-window')">
+                    <svg class="icon-svg" style="width:44px; height:44px; color: #3584E4;" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    <span>App Store</span>
+                </div>
+            `;
+
+            state.installed.forEach(key => {
+                const app = APP_DB[key];
+                if (!app) return;
+
+                // Desktop Icon
+                const dIcon = document.createElement('div');
+                dIcon.className = 'desktop-icon';
+                dIcon.onclick = () => launchDynamicIframeApp(key);
+                dIcon.innerHTML = `
+                    <svg class="icon-svg" style="width:36px; height:36px; color:${app.color};" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>
+                    <span>${app.name}</span>
+                `;
+                desktopContainer.appendChild(dIcon);
+
+                // Dock Icon
+                const dkIcon = document.createElement('div');
+                dkIcon.className = 'dock-icon';
+                dkIcon.id = `dock-app-${key}`;
+                dkIcon.title = app.name;
+                dkIcon.onclick = () => launchDynamicIframeApp(key);
+                dkIcon.innerHTML = `<svg class="icon-svg" style="color:${app.color};" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>`;
+                dockContainer.appendChild(dkIcon);
+
+                // Grid Icon
+                const gItem = document.createElement('div');
+                gItem.className = 'app-grid-item';
+                gItem.onclick = () => { toggleAppGrid(); launchDynamicIframeApp(key); };
+                gItem.innerHTML = `
+                    <svg class="icon-svg" style="width:44px; height:44px; color:${app.color};" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>
+                    <span>${app.name}</span>
+                `;
+                gridContainer.appendChild(gItem);
+            });
+            renderStoreGrid();
+        }
+
+        // --- 3. APP STORE ENGINE ---
+        function filterCategory(cat, el) {
+            state.currentCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            if(el) el.classList.add('active');
+            renderStoreGrid();
+        }
+
+        function filterStoreTab(tab, el) {
+            state.currentTab = tab;
+            document.querySelectorAll('#software-window .sidebar-item').forEach(s => s.classList.remove('active'));
+            if(el) el.classList.add('active');
+            renderStoreGrid();
+        }
+
+        function renderStoreGrid() {
+            const container = document.getElementById('store-grid-container');
+            if(!container) return;
+            const searchVal = (document.getElementById('store-search')?.value || '').toLowerCase();
+            container.innerHTML = '';
+
+            Object.keys(APP_DB).forEach(key => {
+                const app = APP_DB[key];
+                const isInstalled = state.installed.includes(key);
+
+                if (state.currentTab === 'installed' && !isInstalled) return;
+                if (state.currentTab === 'updates' && !isInstalled) return;
+                if (state.currentCategory !== 'all' && app.cat !== state.currentCategory) return;
+                if (searchVal && !app.name.toLowerCase().includes(searchVal) && !app.desc.toLowerCase().includes(searchVal) && !key.includes(searchVal)) return;
+
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.innerHTML = `
+                    <svg class="icon-svg" style="width:36px; height:36px; color:${app.color};" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>
+                    <div class="app-card-title">${app.name}</div>
+                    <div class="app-card-desc">${app.desc}</div>
+                    <button class="app-install-btn ${isInstalled ? 'installed' : ''}" onclick="toggleInstall('${key}')">
+                        ${state.currentTab === 'updates' ? 'Up to date' : (isInstalled ? 'Uninstall' : 'Install')}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleInstall(key) {
+            if (state.installed.includes(key)) {
+                state.installed = state.installed.filter(i => i !== key);
+            } else {
+                state.installed.push(key);
+            }
+            saveState();
+            renderSystemElements();
+        }
+
+        // Dynamic IFrame Launcher for Applications
+        function launchDynamicIframeApp(key) {
+            const app = APP_DB[key];
+            if (!app) return;
+
+            let win = document.getElementById(`dyn-win-${key}`);
+            if (!win) {
+                win = document.createElement('div');
+                win.className = 'window';
+                win.id = `dyn-win-${key}`;
+                win.style.top = '70px';
+                win.style.left = '180px';
+                win.style.width = '880px';
+                win.style.height = '560px';
+                win.innerHTML = `
+                    <div class="title-bar">
+                        <span>${app.name}</span>
+                        <div class="controls">
+                            <span class="btn" onclick="minimizeWindow('dyn-win-${key}')">—</span>
+                            <span class="btn" onclick="maximizeWindow('dyn-win-${key}')">❏</span>
+                            <span class="btn btn-close" onclick="closeWindow('dyn-win-${key}')">✕</span>
+                        </div>
+                    </div>
+                    <div class="browser-toolbar">
+                        <svg class="icon-svg" style="width:16px; height:16px; cursor:pointer;" onclick="document.getElementById('iframe-${key}').src='${app.url}'" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        <input type="text" class="browser-url-bar" value="${app.url}" readonly>
+                    </div>
+                    <div class="window-content">
+                        <iframe id="iframe-${key}" class="iframe-container" src="${app.url}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen"></iframe>
+                    </div>
+                `;
+                document.getElementById('dynamic-windows-container').appendChild(win);
+                setupWindowDragging(win);
+            }
+            openWindow(`dyn-win-${key}`);
+        }
+
+        // --- 4. TERMINAL ENGINE ---
+        const termInput = document.getElementById('term-input');
+        const termOutput = document.getElementById('term-output');
+
+        termInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const rawCmd = termInput.value.trim();
+                const cmd = rawCmd.toLowerCase();
+                termOutput.textContent += `\nuser@resolute-raccoon:~$ ${rawCmd}`;
+
+                if (cmd === 'help') {
+                    termOutput.textContent += `\nAvailable commands: help, apt update, apt search <query>, apt install <pkg>, apt remove <pkg>, apt list, neofetch, clear, ls, date, reboot`;
+                } else if (cmd.startsWith('apt') || cmd.startsWith('sudo apt')) {
+                    handleApt(cmd);
+                } else if (cmd === 'neofetch') {
+                    termOutput.textContent += `\n
+          .-/+oo.           user@resolute-raccoon
+      \`:+sssssssss\`         ---------------------
+    \`:+sssssssssssss:\`      OS: Ubuntu 26.04 LTS (iFrame Edition)
+    \`:+ssssssssssssss:\`     Kernel: Linux 6.14.0-generic
+    \`:+ssssssssssssss:\`     Web Apps: 28 iFrame Connectors
+        \`.-/+oo.          DE: GNOME 50.0`;
+                } else if (cmd === 'clear') {
+                    termOutput.textContent = '';
+                } else if (cmd === 'ls') {
+                    termOutput.textContent += `\nDesktop  Documents  Downloads  Pictures  notes.txt`;
+                } else if (cmd === 'date') {
+                    termOutput.textContent += `\n${new Date().toString()}`;
+                } else if (cmd === 'reboot' || cmd === 'sudo reboot') {
+                    restartSystem();
+                } else if (cmd !== '') {
+                    termOutput.textContent += `\nbash: ${rawCmd}: command not found`;
+                }
+
+                termInput.value = '';
+                const container = termOutput.parentElement;
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+
+        function handleApt(cmd) {
+            const parts = cmd.split(' ').filter(p => p !== 'sudo');
+            const sub = parts[1];
+            const pkg = parts[2];
+
+            if (!sub || sub === 'help') {
+                termOutput.textContent += `\napt 2.8.0 (amd64)\nUsage: apt [update | search <term> | install <pkg> | remove <pkg> | list]`;
+                return;
+            }
+
+            if (sub === 'update') {
+                termOutput.textContent += `\nHit:1 http://archive.ubuntu.com/ubuntu resolute InRelease\nFetched 118 kB in 1s.\nReading package lists... Done (${Object.keys(APP_DB).length} iframe apps available).`;
+            } else if (sub === 'search') {
+                if (!pkg) { termOutput.textContent += `\nUsage: apt search <term>`; return; }
+                termOutput.textContent += `\nSearching iframe app repository...`;
+                Object.keys(APP_DB).forEach(k => {
+                    if (k.includes(pkg) || APP_DB[k].name.toLowerCase().includes(pkg)) {
+                        termOutput.textContent += `\n${k}/resolute ${state.installed.includes(k) ? '[installed]' : ''} - ${APP_DB[k].desc}`;
+                    }
+                });
+            } else if (sub === 'install') {
+                if (!pkg || !APP_DB[pkg]) {
+                    termOutput.textContent += `\nE: Unable to locate iframe package ${pkg || ''}`;
+                    return;
+                }
+                if (state.installed.includes(pkg)) {
+                    termOutput.textContent += `\n${pkg} is already installed.`;
+                } else {
+                    termOutput.textContent += `\nInstalling iframe connector for ${pkg} ...\n${pkg} successfully installed. Shortcut added to Desktop and Dock.`;
+                    state.installed.push(pkg);
+                    saveState();
+                    renderSystemElements();
+                }
+            } else if (sub === 'remove') {
+                if (state.installed.includes(pkg)) {
+                    state.installed = state.installed.filter(i => i !== pkg);
+                    saveState();
+                    renderSystemElements();
+                    termOutput.textContent += `\nRemoving ${pkg} ... Done.`;
+                } else {
+                    termOutput.textContent += `\nE: Package ${pkg} is not installed.`;
+                }
+            } else if (sub === 'list') {
+                termOutput.textContent += `\nListing packages...`;
+                Object.keys(APP_DB).forEach(k => {
+                    termOutput.textContent += `\n${k}/resolute ${state.installed.includes(k) ? '[installed]' : '[available]'}`;
+                });
+            }
+        }
+
+        // --- 5. BOOT, WINDOW & MENU SYSTEM ---
+        setTimeout(() => {
+            document.getElementById('update-screen').style.display = 'none';
+            document.getElementById('boot-screen').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('boot-screen').style.display = 'none';
+                document.getElementById('desktop').style.display = 'flex';
+            }, 800);
+        }, 1200);
+
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+            document.getElementById('clock-widget').innerText = now.toLocaleDateString('en-US', options).replace(',', '');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        let topZIndex = 100;
+
+        function setupWindowDragging(win) {
+            win.addEventListener('mousedown', () => focusWindow(win));
+            const titleBar = win.querySelector('.title-bar');
+            let activeDrag = false, offsetX = 0, offsetY = 0;
+
+            titleBar.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('btn') || win.classList.contains('maximized')) return;
+                activeDrag = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (activeDrag) {
+                    win.style.left = (e.clientX - offsetX) + 'px';
+                    win.style.top = (e.clientY - offsetY) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => activeDrag = false);
+        }
+
+        document.querySelectorAll('.window').forEach(setupWindowDragging);
+
+        function focusWindow(win) {
+            topZIndex++;
+            win.style.zIndex = topZIndex;
+        }
+
+        function openWindow(id) {
+            const win = document.getElementById(id);
+            if (win) { win.style.display = 'flex'; focusWindow(win); }
+        }
+
+        function closeWindow(id) {
+            const win = document.getElementById(id);
+            if (win) win.style.display = 'none';
+        }
+
+        function minimizeWindow(id) {
+            const win = document.getElementById(id);
+            if (win) win.style.display = 'none';
+        }
+
+        function maximizeWindow(id) {
+            const win = document.getElementById(id);
+            if (win) win.classList.toggle('maximized');
+        }
+
+        function toggleWindow(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            if (win.style.display === 'none' || win.style.display === '') openWindow(id);
+            else minimizeWindow(id);
+        }
+
+        function toggleStatusMenu() {
+            const m = document.getElementById('status-menu');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+            document.getElementById('calendar-menu').style.display = 'none';
+        }
+
+        function toggleCalendarMenu() {
+            const c = document.getElementById('calendar-menu');
+            c.style.display = c.style.display === 'flex' ? 'none' : 'flex';
+            document.getElementById('status-menu').style.display = 'none';
+        }
+
+        function toggleAppGrid() {
+            const grid = document.getElementById('app-grid');
+            grid.style.display = grid.style.display === 'grid' ? 'none' : 'grid';
+        }
+
+        function launchApp(id) {
+            toggleAppGrid();
+            openWindow(id);
+        }
+
+        function switchTab(sidebarEl, tabId) {
+            const parent = sidebarEl.parentElement;
+            parent.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            sidebarEl.classList.add('active');
+            
+            const mainPane = sidebarEl.closest('.window-content').querySelector('.main-pane');
+            mainPane.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+        }
+
+        function setAccent(color) {
+            state.accentColor = color;
+            document.documentElement.style.setProperty('--accent', color);
+            saveState();
+        }
+
+        function updateVolume(val) { state.volume = val; saveState(); }
+
+        function updateBrightness(val) {
+            state.brightness = val;
+            document.body.style.filter = `brightness(${val}%)`;
+            saveState();
+        }
+
+        function restartSystem() {
+            document.getElementById('status-menu').style.display = 'none';
+            document.getElementById('desktop').style.display = 'none';
+            document.getElementById('update-screen').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('update-screen').style.display = 'none';
+                document.getElementById('boot-screen').style.display = 'flex';
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('desktop').style.display = 'flex';
+                }, 800);
+            }, 1200);
+        }
+
+        // Initialize Engine
+        loadState();
+        renderSystemElements();
+    </script>
+</body>
+</html>
+

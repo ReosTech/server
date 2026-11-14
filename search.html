@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reos - Search Engine</title>
+    <link rel="icon" type="image/jpg" href="/reo.jpg">
+
+    <!-- Google Custom Search Engine Script -->
+    <script async src="https://cse.google.com/cse.js?cx=9689aa7188f204f5d"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            background: #1e293b;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: #334155;
+        }
+
+        .main-container {
+            flex: 1;
+            max-width: 850px;
+            width: 100%;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        /* --- Dark Theme & Border Clean-up Overrides for Google CSE --- */
+        .gcse-search-container {
+            width: 100%;
+        }
+
+        /* Remove Google's outer wrapper styles */
+        .gsc-control-cse, 
+        .gsc-control-cse-en {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* --- REMOVE ALL WHITE LINES / DEFAULT DIVIDERS --- */
+        .gsc-above-wrapper-area,
+        .gsc-resultsHeader,
+        .gsc-tabsArea,
+        .gsc-control-cse table,
+        .gsc-control-cse tbody,
+        .gsc-control-cse tr,
+        .gsc-control-cse td,
+        .gsc-table-result,
+        .gsc-table-cell-snippet-close,
+        .gsc-thumbnail-inside,
+        .gsc-url-top,
+        .gsc-url-bottom {
+            border: none !important;
+            border-top: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+
+        /* Search input bar */
+        .gsc-search-box-tools .gsc-search-box .gsc-input {
+            padding-right: 8px;
+        }
+
+        form.gsc-search-box {
+            margin-bottom: 20px !important;
+        }
+
+        td.gsc-input {
+            background: transparent !important;
+        }
+
+        .gsc-input-box {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            border-radius: 10px !important;
+            height: auto !important;
+        }
+
+        .gsc-input-box:focus-within {
+            border-color: #38bdf8 !important;
+        }
+
+        input.gsc-input {
+            background: transparent !important;
+            color: #ffffff !important;
+            font-size: 16px !important;
+            padding: 10px 14px !important;
+        }
+
+        /* Search Button */
+        button.gsc-search-button,
+        .gsc-search-button-v2 {
+            background-color: #0284c7 !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 12px 20px !important;
+            cursor: pointer !important;
+        }
+
+        .gsc-search-button-v2 svg {
+            fill: #ffffff !important;
+        }
+
+        /* Results Area Cards */
+        .gsc-webResult.gsc-result {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            margin-bottom: 14px !important;
+        }
+
+        /* Remove Google's default white hover border */
+        .gsc-webResult.gsc-result:hover,
+        .gsc-result:hover {
+            border: 1px solid #475569 !important;
+        }
+
+        /* Result Titles & Snippets */
+        .gs-title, .gs-title * {
+            color: #38bdf8 !important;
+            text-decoration: none !important;
+            font-size: 17px !important;
+            font-weight: 600 !important;
+        }
+
+        .gs-title:hover {
+            text-decoration: underline !important;
+        }
+
+        .gs-snippet {
+            color: #cbd5e1 !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+        }
+
+        /* Result URLs & Breadcrumbs */
+        .gsc-url-top, 
+        .gsc-url-bottom, 
+        .gs-visibleUrl, 
+        .gs-visibleUrl * {
+            color: #94a3b8 !important;
+            font-size: 13px !important;
+            text-decoration: none !important;
+            border: none !important;
+        }
+
+        /* Pagination */
+        .gsc-cursor-page {
+            color: #38bdf8 !important;
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            padding: 6px 12px !important;
+            border-radius: 6px !important;
+            margin: 0 4px !important;
+        }
+
+        .gsc-cursor-current-page {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+        }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZQ11ET1VX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'G-0ZQ11ET1VX');
+        </script>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">Reos Search</a>
+        <div class="header-actions">
+            <button class="nav-btn" onclick="window.location.href='/'">Home</button>
+            <button class="nav-btn" onclick="window.location.href='/console'">Console</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Google CSE Search Box & Results Container -->
+        <div class="gcse-search-container">
+            <div class="gcse-search"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/firejs"></script>
+</body>
+</html>

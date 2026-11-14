@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reos - Dashboard</title>
+    <link rel="icon" type="image/jpg" href="/reo.jpg">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; background-color: #f9fafb; }
+        .btn-gradient { border: none; outline: none; cursor: pointer; background: linear-gradient(135deg, #2563eb, #8b5cf6); color: #ffffff; font-size: 0.9rem; font-weight: 600; padding: 0.75rem 1.25rem; border-radius: 8px; text-decoration: none; display: inline-block; text-align: center; transition: all 0.3s ease-in-out; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); width: 100%; }
+        .btn-gradient:hover { background: linear-gradient(135deg, #1d4ed8, #7c3aed); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35); }
+        header { background-color: rgba(248, 250, 252, 0.85); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-bottom: 1px solid rgba(226, 232, 240, 0.8); position: sticky; top: 0; z-index: 100; }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+        .logo { font-size: 1.2rem; font-weight: 800; color: #2563eb; text-decoration: none; flex-shrink: 0; }
+        .nav-actions { display: flex; gap: 0.5rem; align-items: center; position: relative; max-width: 75%; }
+        .btn-nav-home { background-color: #ffffff; color: #4b5563; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid #d1d5db; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
+        .btn-nav-home:hover { background-color: #f3f4f6; color: #111827; }
+        .btn-nav-join { background-color: #2563eb; color: #ffffff; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 500; border: none; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
+        .profile-menu-container { display: none; position: relative; max-width: 100%; }
+        .btn-profile { background-color: #ffffff; color: #1f2937; padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; border: 1px solid #e5e7eb; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; max-width: 200px; }
+        .profile-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+        #profileName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 110%; background-color: #ffffff; min-width: 200px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden; z-index: 200; }
+        .dropdown-content button { width: 100%; text-align: left; background: none; border: none; color: #4b5563; padding: 0.75rem 1rem; display: block; font-size: 0.9rem; cursor: pointer; }
+        .dropdown-content button:hover { background-color: #f3f4f6; color: #2563eb; }
+        .page-header { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 2rem 1.25rem; text-align: center; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; word-break: break-word; line-height: 1.3; }
+        .page-header p { font-size: 0.95rem; color: #4b5563; max-width: 600px; margin: 0 auto; }
+        .content-section { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+        .dash-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
+        .dash-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.06); border-color: #cbd5e1; }
+        .dash-card-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .dash-card h2 { font-size: 1.2rem; color: #0f172a; margin-bottom: 0.5rem; }
+        .dash-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 1.25rem; flex: 1; }
+        #dev-options-panel, #delete-account-panel, #custom-avatar-panel { display: none; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        #delete-account-panel { border-color: #fca5a5; background-color: #fff5f5; }
+        #custom-avatar-panel { border-color: #93c5fd; background-color: #f0f9ff; }
+        .dev-actions-row button { flex: 1; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; font-size: 0.9rem; }
+        #modeCreateBtn.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        #modeRemoveBtn.active { background-color: #dc2626; color: white; border-color: #dc2626; }
+        .btn-project-opt { background-color: #ffffff; color: #1f2937; border: 1px solid #d1d5db; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-project-opt:hover { border-color: #2563eb; background-color: #f0f6ff; color: #2563eb; }
+        .danger-input, .custom-input { width: 100%; padding: 0.75rem; margin: 0.75rem 0 1rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .btn-delete-confirm { background-color: #dc2626; color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-delete-confirm:hover { background-color: #b91c1c; }
+        .btn-save-avatar { background-color: #2563eb; color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-save-avatar:hover { background-color: #1d4ed8; }
+        @media (min-width: 640px) { .page-header { padding: 3rem 2rem; } .page-header h1 { font-size: 2.25rem; } .btn-profile { max-width: 250px; } #profileName { max-width: 170px; } }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZQ11ET1VX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'G-0ZQ11ET1VX');
+        </script>
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="/index.html" class="logo">Reos</a>
+            <div class="nav-actions">
+                <button class="btn-nav-home" onclick="window.location.href='/index.html'">Home</button>
+                <button id="navJoinBtn" class="btn-nav-join" onclick="window.location.href='/login.html'">Join</button>
+                <div class="profile-menu-container" id="profileMenu">
+                    <button class="btn-profile" onclick="toggleDropdown()">
+                        <img id="userAvatar" class="profile-avatar" src="https://www.gstatic.com/images/branding/product/1x/avatar_square_blue_512dp.png" alt="Profile Picture">
+                        <span id="profileName">User</span> ▾
+                    </button>
+                    <div class="dropdown-content" id="dropdownBox">
+                        <button onclick="revealAvatarPanel()">Change Profile Picture</button>
+                        <button onclick="revealDeveloperOptions()">Developer Console</button>
+                        <button onclick="revealDeletePanel()" style="color: #dc2626;">Delete Account</button>
+                        <button onclick="window.location.href='/index.html'">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="page-header">
+        <div class="header-container">
+            <h1 id="userGreeting">Workspace Dashboard</h1>
+            <p>Access your AI Assistant, Cloud Storage, and System Developer Tools.</p>
+        </div>
+    </section>
+
+    <main class="content-section">
+        <div class="dashboard-grid">
+            <div class="dash-card">
+                <div><div class="dash-card-icon">🤖</div><h2>Reos AI Workspace</h2><p>Interactive intelligent assistant designed to solve tasks, generate code, and answer questions instantly.</p></div>
+                <button class="btn-gradient" onclick="window.location.href='/chat.html'">Open AI Chat</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">☁️</div><h2>Cloud Storage</h2><p>Secure per-user cloud storage powered by Puter. Easy drag-and-drop file upload and management.</p></div>
+                <button class="btn-gradient" onclick="window.location.href='/storage.html'">Open Storage</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">📱</div><h2>ReOS Mobile Build</h2><p>Download the official Android application release for native workspace integration.</p></div>
+                <a href="/reosapp.apk" download class="btn-gradient">Download APK</a>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">🌐</div><h2>Reos search</h2><p>search the internet with ai</p></div>
+                <button class="btn-gradient" onclick="window.location.href='/search.html'">start searching</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">🔮</div><h2>Build with Reos</h2><p>build your website with reos</p></div>
+                <button id="buildConsoleBtn" class="btn-gradient" onclick="openConsole()">start building</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">APP</div><h2>amake ai app maker</h2><p>create any android app with amake ai app maker</p></div>
+                <button class="btn-gradient" onclick="window.location.href='/amake.html'">Build now</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">OS</div><h2>Releases</h2><p>get latest releases of ReOS</p></div>
+                <button class="btn-gradient" onclick="window.location.href='/releases.html'">get ReOS</button>
+            </div>
+            <div class="dash-card">
+                <div><div class="dash-card-icon">📃</div><h2>Reos Form Maker</h2><p>eaisly create forms</p></div>
+                <button class="btn-gradient" onclick="openBuild()">start creating</button>
+            </div>
+            <div class="dash-card">
+                           <div><div class="dash-card-icon">📃</div><h2>Reos Form Response</h2><p>view responses of your form</p></div>
+                          <button class="btn-gradient" onclick="openResp()">View</button>
+                       </div>
+                       <div class="dash-card">
+          <div><div class="dash-card-icon">📧</div><h2>Reos Mail</h2><p>send and recieve emails</p></div>
+         <button class="btn-gradient" onclick="openMail()">Open Email</button>
+         </div>
+<div class="dash-card">
+<div><div class="dash-card-icon">🛍️</div><h2>Store</h2>
+<button class="btn-gradient" onclick="window.location.href='/store/store.html'">Open</button>
+</div>
+        </div>
+
+        <div id="custom-avatar-panel">
+            <h3 style="color: #1e40af; margin-bottom: 0.5rem;">Custom Profile Picture</h3>
+            <p style="font-size: 0.9rem; color: #1e3a8a; margin-bottom: 1rem;">
+                Provide a direct Image URL to set your custom avatar icon.
+            </p>
+            <input type="url" id="avatarUrlInput" class="custom-input" placeholder="https://example.com/my-avatar.png">
+            <button class="btn-save-avatar" onclick="updateCustomAvatar()">Update Avatar</button>
+            <div id="avatarStatusMsg" style="margin-top: 0.75rem; font-size: 0.9rem;"></div>
+        </div>
+
+        <div id="dev-options-panel">
+            <h3> System Developer Console</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 1.5rem; color: #6b7280;">System Root: Verified</p>
+            <div class="dev-actions-row" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <button class="btn-dev-mode active" id="modeCreateBtn" onclick="setDevMode('create')">➕ Create Project</button>
+                <button class="btn-dev-mode" id="modeRemoveBtn" onclick="setDevMode('remove')">🗑️ Remove Project</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem;">
+                <button class="btn-project-opt" onclick="handleProjectAction('Theme')">🎨 Theme</button>
+                <button class="btn-project-opt" onclick="handleProjectAction('Wallpaper')">🖼️ Wallpaper</button>
+                <button class="btn-project-opt" onclick="handleProjectAction('OS Build/Edition')">💿 OS Build</button>
+                <button class="btn-project-opt" onclick="handleProjectAction('App')">📱 App</button>
+            </div>
+        </div>
+
+        <div id="delete-account-panel">
+            <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Delete Account</h3>
+            <p id="deleteDescription" style="font-size: 0.9rem; color: #7f1d1d; margin-bottom: 1rem;">
+                This action is permanent and cannot be undone.
+            </p>
+            <input type="password" id="deletePasswordInput" class="danger-input" placeholder="Enter password to confirm">
+            <button class="btn-delete-confirm" onclick="confirmAccountDeletion()">Permanently Delete Account</button>
+            <div id="deleteStatusMsg" style="margin-top: 0.75rem; font-size: 0.9rem;"></div>
+        </div>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let username = urlParams.get('user');
+        let userPic = urlParams.get('pic');
+        const isGoogleAccount = username ? username.toLowerCase().endsWith('@gmail.com') : false;
+
+        if (username) {
+            document.getElementById('navJoinBtn').style.display = 'none';
+            document.getElementById('profileMenu').style.display = 'block';
+            const displayName = username.includes('@') ? username.split('@')[0] : username;
+            document.getElementById('profileName').innerText = displayName;
+            document.getElementById('userGreeting').innerText = `Welcome back, ${displayName}!`;
+
+            if (userPic && userPic.trim() !== '') {
+                document.getElementById('userAvatar').src = decodeURIComponent(userPic);
+            }
+        }
+
+        function openConsole() {
+            const baseUrl = '/console.html';
+            window.location.href = username ? `${baseUrl}?user=${encodeURIComponent(username)}` : baseUrl;
+        }
+
+function openBuild() {
+	const baseUrl = '/form_builder.html'
+	window.location.href = username ? `${baseUrl}?user=${encodeURIComponent(username)}` : baseUrl;
+}
+function openResp() {
+	const baseUrl = '/responses.html'
+	window.location.href = username ? `${baseUrl}?user=${encodeURIComponent(username)}` : baseUrl;
+}
+
+function openMail() {
+	const baseUrl = '/emails.html'
+	window.location.href = username ? `${baseUrl}?user=${encodeURIComponent(username)}` : baseUrl;
+}
+
+        function toggleDropdown() {
+            const box = document.getElementById('dropdownBox');
+            box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function revealAvatarPanel() {
+            document.getElementById('custom-avatar-panel').style.display = 'block';
+            document.getElementById('dev-options-panel').style.display = 'none';
+            document.getElementById('delete-account-panel').style.display = 'none';
+            document.getElementById('dropdownBox').style.display = 'none';
+            document.getElementById('custom-avatar-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function revealDeveloperOptions() {
+            document.getElementById('dev-options-panel').style.display = 'block';
+            document.getElementById('custom-avatar-panel').style.display = 'none';
+            document.getElementById('delete-account-panel').style.display = 'none';
+            document.getElementById('dropdownBox').style.display = 'none';
+            document.getElementById('dev-options-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function revealDeletePanel() {
+            const passwordInput = document.getElementById('deletePasswordInput');
+            const desc = document.getElementById('deleteDescription');
+
+            if (isGoogleAccount) {
+                passwordInput.style.display = 'none';
+                desc.innerText = 'This action is permanent. Password validation is disabled for Google logins.';
+            } else {
+                passwordInput.style.display = 'block';
+                desc.innerText = 'This action is permanent and cannot be undone. Enter your account password to confirm deletion.';
+            }
+
+            document.getElementById('delete-account-panel').style.display = 'block';
+            document.getElementById('custom-avatar-panel').style.display = 'none';
+            document.getElementById('dev-options-panel').style.display = 'none';
+            document.getElementById('dropdownBox').style.display = 'none';
+            document.getElementById('delete-account-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateCustomAvatar() {
+            const inputUrl = document.getElementById('avatarUrlInput').value.trim();
+            const statusMsg = document.getElementById('avatarStatusMsg');
+
+            if (!inputUrl) {
+                statusMsg.style.color = '#dc2626';
+                statusMsg.innerText = 'Please enter a valid image URL.';
+                return;
+            }
+
+            document.getElementById('userAvatar').src = inputUrl;
+            
+            // Update URL parameters without reloading page
+            const newParams = new URLSearchParams(window.location.search);
+            newParams.set('pic', inputUrl);
+            window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+
+            statusMsg.style.color = '#16a34a';
+            statusMsg.innerText = 'Profile picture updated successfully!';
+        }
+
+        async function confirmAccountDeletion() {
+            const password = document.getElementById('deletePasswordInput').value;
+            const statusMsg = document.getElementById('deleteStatusMsg');
+
+            if (!username) {
+                statusMsg.style.color = '#dc2626';
+                statusMsg.innerText = 'No logged-in user detected.';
+                return;
+            }
+
+            if (!isGoogleAccount && !password) {
+                statusMsg.style.color = '#dc2626';
+                statusMsg.innerText = 'Password is required to delete your account.';
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to permanently delete user "${username}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password, isGoogle: isGoogleAccount })
+                });
+
+                const resData = await response.json();
+                if (resData.success) {
+                    statusMsg.style.color = '#16a34a';
+                    statusMsg.innerText = 'Account deleted! Redirecting...';
+                    setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+                } else {
+                    statusMsg.style.color = '#dc2626';
+                    statusMsg.innerText = resData.message || 'Deletion failed.';
+                }
+            } catch (err) {
+                statusMsg.style.color = '#dc2626';
+                statusMsg.innerText = 'Network error while attempting deletion.';
+            }
+        }
+
+        let currentDevMode = 'create';
+        function setDevMode(mode) {
+            currentDevMode = mode;
+            document.getElementById('modeCreateBtn').classList.remove('active');
+            document.getElementById('modeRemoveBtn').classList.remove('active');
+            if(mode === 'create') { document.getElementById('modeCreateBtn').classList.add('active'); }
+            else { document.getElementById('modeRemoveBtn').classList.add('active'); }
+        }
+
+        function handleProjectAction(category) {
+            if (currentDevMode === 'create') { alert(`Successfully created a new ${category}`); }
+            else { alert(`WARNING: Removed ${category} but it still might be present on your device`); }
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.btn-profile')) {
+                document.getElementById('dropdownBox').style.display = 'none';
+            }
+        }
+    </script>
+    <script type="module" src="/firejs"></script>
+</body>
+</html>

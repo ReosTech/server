@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reos Forms - View Form</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+
+  <!-- MAIN CONTAINER -->
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+    
+    <!-- HEADER BAR -->
+    <div id="formHeader" class="bg-blue-600 p-6 text-white space-y-2 border-t-8 border-blue-800">
+      <h1 id="formTitle" class="text-2xl font-bold tracking-tight">Loading Form...</h1>
+      <div id="formDescription" class="text-blue-100 text-sm prose prose-invert">Please wait while we retrieve the form details.</div>
+    </div>
+
+    <!-- FORM SUBMISSION BODY -->
+    <form id="publicForm" onsubmit="submitForm(event)" class="p-6 space-y-6 hidden">
+      <div id="fieldsContainer" class="space-y-6"></div>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs text-slate-400">Powered by Reos Forms</span>
+        <button type="submit" id="submitBtn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md transition flex items-center space-x-2">
+          <span>Submit Response</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="successScreen" class="hidden p-12 text-center space-y-4">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="check" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-800">Response Recorded</h2>
+      <p class="text-slate-500 text-sm">Thank you! Your response has been successfully submitted.</p>
+    </div>
+
+    <!-- ERROR SCREEN -->
+    <div id="errorScreen" class="hidden p-12 text-center space-y-3">
+      <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="alert-circle" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-xl font-bold text-slate-800">Form Unavailable</h2>
+      <p id="errorMessage" class="text-slate-500 text-sm">This form could not be found or has been removed.</p>
+    </div>
+
+  </div>
+
+  <!-- FORM ID PROMPT MODAL -->
+  <div id="idPromptModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-100 text-center space-y-5">
+      <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
+        <i data-lucide="file-question" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-slate-800">Enter Form ID</h2>
+        <p class="text-xs text-slate-500 mt-1">No form ID was found in the URL. Please enter the target Form ID to load it.</p>
+      </div>
+
+      <form onsubmit="handleIdPromptSubmit(event)" class="space-y-3 pt-2">
+        <input type="text" id="promptFormIdInput" required placeholder="e.g. form_xyz789" 
+          class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white transition" />
+        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md transition">
+          Load Form
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT RENDERING ENGINE -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const formId = urlParams.get('id');
+    let loadedFormSchema = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+
+      if (!formId || formId.trim() === "") {
+        document.getElementById('idPromptModal').classList.remove('hidden');
+        document.getElementById('idPromptModal').classList.add('flex');
+        return;
+      }
+
+      fetchForm(formId);
+    });
+
+    function handleIdPromptSubmit(event) {
+      event.preventDefault();
+      const enteredId = document.getElementById('promptFormIdInput').value.trim();
+      if (enteredId) {
+        window.location.search = `?id=${encodeURIComponent(enteredId)}`;
+      }
+    }
+
+    function fetchForm(id) {
+      fetch(`/api/forms/get/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.form) {
+            loadedFormSchema = data.form;
+            renderForm(data.form);
+          } else {
+            showError(data.message || "Form not found.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showError("Failed to connect to Reos server.");
+        });
+    }
+
+    function renderForm(form) {
+      document.getElementById('formTitle').textContent = form.title;
+      
+      const descEl = document.getElementById('formDescription');
+      if (form.description) {
+        descEl.innerHTML = marked.parse(form.description);
+      } else {
+        descEl.innerHTML = "";
+      }
+      
+      const container = document.getElementById('fieldsContainer');
+      container.innerHTML = "";
+
+      form.fields.forEach(field => {
+        const wrapper = document.createElement('div');
+        wrapper.className = "space-y-2 bg-slate-50/50 p-4 rounded-xl border border-slate-100";
+
+        const parsedLabel = marked.parseInline(field.label || "");
+        let labelHtml = `<label class="block text-sm font-semibold text-slate-700">${parsedLabel} ${field.required ? '<span class="text-red-500">*</span>' : ''}</label>`;
+        let inputHtml = "";
+
+        if (field.type === 'text') {
+          inputHtml = `<input type="text" name="${field.id}" ${field.required ? 'required' : ''} placeholder="Your answer" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-600 transition" />`;
+        } else if (field.type === 'textarea') {
+          inputHtml = `<textarea name="${field.id}" ${field.required ? 'required' : ''} rows="3" placeholder="Your detailed response" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-600 transition"></textarea>`;
+        } else if (field.type === 'radio') {
+          inputHtml = `<div class="space-y-2 pt-1">`;
+          field.options.forEach((opt, idx) => {
+            const parsedOpt = marked.parseInline(opt);
+            inputHtml += `
+              <label class="flex items-center space-x-3 cursor-pointer text-sm text-slate-700">
+                <input type="radio" name="${field.id}" value="${opt}" ${idx === 0 && field.required ? 'required' : ''} class="text-blue-600 focus:ring-blue-500 h-4 w-4" />
+                <span>${parsedOpt}</span>
+              </label>`;
+          });
+          inputHtml += `</div>`;
+        } else if (field.type === 'checkbox') {
+          inputHtml = `<div class="space-y-2 pt-1">`;
+          field.options.forEach((opt) => {
+            const parsedOpt = marked.parseInline(opt);
+            inputHtml += `
+              <label class="flex items-center space-x-3 cursor-pointer text-sm text-slate-700">
+                <input type="checkbox" name="${field.id}" value="${opt}" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4" />
+                <span>${parsedOpt}</span>
+              </label>`;
+          });
+          inputHtml += `</div>`;
+        } else if (field.type === 'select') {
+          inputHtml = `<select name="${field.id}" ${field.required ? 'required' : ''} class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-600 transition">
+            <option value="" disabled selected>Choose an option</option>`;
+          field.options.forEach(opt => {
+            inputHtml += `<option value="${opt}">${opt}</option>`;
+          });
+          inputHtml += `</select>`;
+        }
+
+        wrapper.innerHTML = labelHtml + inputHtml;
+        container.appendChild(wrapper);
+      });
+
+      document.getElementById('publicForm').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function submitForm(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const answers = {};
+
+      loadedFormSchema.fields.forEach(field => {
+        if (field.type === 'checkbox') {
+          const checkedOpts = [];
+          event.target.querySelectorAll(`input[name="${field.id}"]:checked`).forEach(cb => checkedOpts.push(cb.value));
+          answers[field.id] = checkedOpts;
+        } else {
+          answers[field.id] = formData.get(field.id) || "";
+        }
+      });
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+
+      fetch(`/api/forms/submit/${formId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('publicForm').classList.add('hidden');
+          document.getElementById('formHeader').classList.add('hidden');
+          document.getElementById('successScreen').classList.remove('hidden');
+          lucide.createIcons();
+        } else {
+          alert("Error: " + data.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit Response";
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to submit response.");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Response";
+      });
+    }
+
+    function showError(msg) {
+      document.getElementById('formHeader').classList.add('hidden');
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorScreen').classList.remove('hidden');
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

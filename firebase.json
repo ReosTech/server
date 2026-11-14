@@ -1,11 +1,25 @@
 {
   "hosting": {
-"site": "reostech",
+    "site": "reostech",
     "public": "./",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "destination": "https://server-jdqc.onrender.com//api/**"
+      },
+      {
+        "source": "/auth/**",
+        "destination": "https://server-jdqc.onrender.com/auth/**"
+      },
+      {
+        "source": "**",
+        "destination": "/404.html"
+      }
     ]
   }
 }

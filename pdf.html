@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete PDF Toolkit Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+  <header class="bg-indigo-600 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">PDF Toolkit Ultimate</h1>
+      <span class="text-xs bg-indigo-500 px-2.5 py-1 rounded-full">Merge • Edit • Sign • Export</span>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto w-full p-4 flex-grow grid grid-cols-1 md:grid-cols-4 gap-6">
+
+    <!-- Control Panel -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4 overflow-y-auto max-h-[90vh]">
+      
+      <!-- Load Main File -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Primary PDF</label>
+        <input type="file" id="pdfFile" accept="application/pdf" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700">
+      </div>
+
+      <!-- Navigation -->
+      <div class="border-t pt-3">
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Navigate</label>
+        <div class="flex items-center justify-between">
+          <button onclick="changePage(-1)" class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-bold border">Prev</button>
+          <span class="text-xs text-slate-600">Page <span id="pageNum">0</span> / <span id="pageCount">0</span></span>
+          <button onclick="changePage(1)" class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-bold border">Next</button>
+        </div>
+      </div>
+
+      <!-- Merge Feature -->
+      <div class="border-t pt-3 space-y-2">
+        <label class="block text-xs font-bold text-slate-700 uppercase">3. Merge PDF</label>
+        <input type="file" id="mergeFile" accept="application/pdf" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700">
+        <button onclick="mergeSecondPDF()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-1.5 rounded text-xs font-medium">Append Second PDF</button>
+      </div>
+
+      <!-- Fill & Sign -->
+      <div class="border-t pt-3 space-y-2">
+        <label class="block text-xs font-bold text-slate-700 uppercase">4. Fill & Sign</label>
+        <input type="text" id="addTextInput" placeholder="Type text to place..." class="w-full border rounded px-2 py-1 text-xs">
+        <button onclick="addTextToPDF()" class="w-full bg-slate-700 text-white py-1 rounded text-xs">Insert Text</button>
+        
+        <canvas id="sigPad" class="border rounded w-full h-20 bg-slate-50 touch-none mt-1"></canvas>
+        <div class="flex gap-2">
+          <button onclick="clearSig()" class="w-1/2 bg-slate-200 text-slate-700 py-1 rounded text-xs">Clear Sig</button>
+          <button onclick="applySig()" class="w-1/2 bg-indigo-600 text-white py-1 rounded text-xs">Stamp Sig</button>
+        </div>
+      </div>
+
+      <!-- Password Metadata -->
+      <div class="border-t pt-3 space-y-2">
+        <label class="block text-xs font-bold text-slate-700 uppercase">5. Security Metadata</label>
+        <input type="password" id="pdfOwnerPass" placeholder="Set Owner/View Note..." class="w-full border rounded px-2 py-1 text-xs">
+      </div>
+
+      <!-- Export Options -->
+      <div class="border-t pt-3 space-y-2">
+        <label class="block text-xs font-bold text-slate-700 uppercase">6. Export Options</label>
+        <button onclick="exportCurrentPageAsImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded text-xs font-medium">Export Page as PNG</button>
+        <button onclick="exportText()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded text-xs font-medium">Export Page Text (.TXT)</button>
+      </div>
+
+      <!-- Save Output -->
+      <div class="border-t pt-3">
+        <button onclick="downloadPDF()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs shadow">
+          Download PDF Document
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Viewer -->
+    <section class="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-start overflow-auto min-h-[500px]">
+      <div id="statusMessage" class="w-full hidden p-2 rounded text-xs mb-3 text-center"></div>
+      
+      <div class="relative border shadow-md rounded bg-slate-50" id="viewerWrapper">
+        <canvas id="pdfViewer" class="block"></canvas>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const { PDFDocument, rgb } = PDFLib;
+    
+    let pdfBytes = null;
+    let pdfDocLib = null;
+    let pdfJsDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+
+    // Load PDF
+    document.getElementById('pdfFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      pdfBytes = await file.arrayBuffer();
+      pdfDocLib = await PDFDocument.load(pdfBytes);
+      pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+      
+      totalPages = pdfJsDoc.numPages;
+      currentPage = 1;
+      
+      document.getElementById('pageCount').textContent = totalPages;
+      renderPage(currentPage);
+      showStatus(`Loaded: ${file.name}`);
+    });
+
+    // Render Page
+    async function renderPage(num) {
+      if (!pdfJsDoc) return;
+      document.getElementById('pageNum').textContent = num;
+      
+      const page = await pdfJsDoc.getPage(num);
+      const viewport = page.getViewport({ scale: 1.2 });
+      
+      const canvas = document.getElementById('pdfViewer');
+      const ctx = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    }
+
+    function changePage(delta) {
+      if (!pdfJsDoc) return;
+      const newPage = currentPage + delta;
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        renderPage(currentPage);
+      }
+    }
+
+    // Merge Feature
+    async function mergeSecondPDF() {
+      const file = document.getElementById('mergeFile').files[0];
+      if (!file || !pdfDocLib) return showStatus("Load main PDF and select second PDF first.", true);
+
+      const secondBytes = await file.arrayBuffer();
+      const secondDoc = await PDFDocument.load(secondBytes);
+      
+      const copiedPages = await pdfDocLib.copyPages(secondDoc, secondDoc.getPageIndices());
+      copiedPages.forEach(p => pdfDocLib.addPage(p));
+
+      await syncChanges();
+      showStatus(`Merged pages from ${file.name}`);
+    }
+
+    // Add Text
+    async function addTextToPDF() {
+      const text = document.getElementById('addTextInput').value;
+      if (!text || !pdfDocLib) return showStatus("Load PDF and input text first.", true);
+
+      const pages = pdfDocLib.getPages();
+      const page = pages[currentPage - 1];
+      
+      page.drawText(text, {
+        x: 50,
+        y: page.getHeight() - 100,
+        size: 16,
+        color: rgb(0, 0, 0.8)
+      });
+
+      await syncChanges();
+      showStatus("Text inserted.");
+    }
+
+    // Signature Pad
+    const sigCanvas = document.getElementById('sigPad');
+    const sigCtx = sigCanvas.getContext('2d');
+    let isDrawing = false;
+    sigCanvas.width = sigCanvas.offsetWidth;
+    sigCanvas.height = sigCanvas.offsetHeight;
+
+    sigCanvas.addEventListener('mousedown', (e) => { isDrawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); });
+    sigCanvas.addEventListener('mousemove', (e) => { if (isDrawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } });
+    sigCanvas.addEventListener('mouseup', () => isDrawing = false);
+
+    function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+
+    async function applySig() {
+      if (!pdfDocLib) return showStatus("Load PDF first.", true);
+      const pngImage = await pdfDocLib.embedPng(sigCanvas.toDataURL('image/png'));
+      const page = pdfDocLib.getPages()[currentPage - 1];
+      
+      page.drawImage(pngImage, { x: page.getWidth() - 150, y: 50, width: 100, height: 50 });
+      await syncChanges();
+      showStatus("Signature stamped.");
+    }
+
+    // Export Formats
+    function exportCurrentPageAsImage() {
+      const canvas = document.getElementById('pdfViewer');
+      if (!pdfJsDoc) return showStatus("Load a PDF first.", true);
+      
+      const link = document.createElement('a');
+      link.download = `page_${currentPage}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    async function exportText() {
+      if (!pdfJsDoc) return showStatus("Load a PDF first.", true);
+      const page = await pdfJsDoc.getPage(currentPage);
+      const textContent = await page.getTextContent();
+      const textStr = textContent.items.map(item => item.str).join(' ');
+
+      const blob = new Blob([textStr], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.download = `page_${currentPage}_text.txt`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+    }
+
+    // Utilities
+    async function syncChanges() {
+      pdfBytes = await pdfDocLib.save();
+      pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+      totalPages = pdfJsDoc.numPages;
+      document.getElementById('pageCount').textContent = totalPages;
+      renderPage(currentPage);
+    }
+
+    function downloadPDF() {
+      if (!pdfBytes) return showStatus("No PDF loaded.", true);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'edited_document.pdf';
+      link.click();
+    }
+
+    function showStatus(msg, isError = false) {
+      const el = document.getElementById('statusMessage');
+      el.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+      el.classList.add(isError ? 'bg-red-100' : 'bg-green-100', isError ? 'text-red-700' : 'text-green-700');
+      el.textContent = msg;
+    }
+  </script>
+
+</body>
+</html>

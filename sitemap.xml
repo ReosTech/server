@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://reostech.pagekite.me/</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/pg2.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/login.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/chat.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/console.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/amake.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://reostech.pagekite.me/google266cb21f482cfda5.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+  </url>
+<url> <loc>https://reostech.pagekite.me/releases.html</loc>
+    <lastmod>2026-09-05</lastmod>
+       <changefreq>weekly</changefreq>
+           <priority>0.7</priority>
+             </url>
+             
+<url> <loc>https://reostech.pagekite.me/storage.html</loc>
+    <lastmod>2026-09-05</lastmod>
+       <changefreq>weekly</changefreq>
+           <priority>0.7</priority>
+             </url>
+             
+ <url>
+  <loc>https://reostech.pagekite.me/search.html</loc>
+ <lastmod>2026-09-05</lastmod>
+ <changefreq>weekly</changefreq>
+ <priority>0.7</priority>
+ </url> 
+ <url>
+    <loc>https://reostech.pagekite.me/form_builder.html</loc>
+  <lastmod>2026-09-05</lastmod>                                       60  <changefreq>weekly</changefreq>
+   <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://reostech.pagekite.me/responses.html</loc>
+    <lastmod>2026-09-05</lastmod>                                       60  <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+   </url>
+
+   <url>
+      <loc>https://reostech.pagekite.me/emails.html</loc>
+     <lastmod>2026-09-05</lastmod>                                       60  <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    </url>         
+</urlset>
