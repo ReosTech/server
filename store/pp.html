@@ -1,0 +1,1502 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Phobos - Creepy Maze Edition</title>
+<style>
+  * {
+    box-sizing: border-box;
+    user-select: none;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: 'Courier New', Courier, monospace;
+    color: #eee;
+  }
+  
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+
+  #vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.42), inset 0 0 35px rgba(0, 0, 0, 0.28);
+    z-index: 5;
+  }
+
+
+  #crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 50, 50, 0.7);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 6;
+    box-shadow: 0 0 4px #f00;
+  }
+
+
+  #instructions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(4, 2, 6, 0.93);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    text-align: center;
+    padding: 20px;
+  }
+
+
+  .title-box {
+    border: 2px solid #800;
+    background: rgba(20, 0, 0, 0.6);
+    padding: 30px 50px;
+    border-radius: 8px;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
+    max-width: 540px;
+  }
+
+
+  h1 {
+    color: #e22;
+    font-size: 2.2rem;
+    letter-spacing: 5px;
+    margin-top: 0;
+    text-shadow: 0 0 10px #f00;
+  }
+
+
+  p {
+    color: #aaa;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+
+  .btn-play {
+    margin-top: 25px;
+    padding: 12px 30px;
+    background: #400;
+    color: #fff;
+    border: 1px solid #900;
+    font-size: 1.1rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    letter-spacing: 2px;
+  }
+
+
+  .btn-play:hover {
+    background: #800;
+    box-shadow: 0 0 15px #f00;
+  }
+
+
+  #hud {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    color: #aaa;
+    text-shadow: 1px 1px 2px #000;
+  }
+
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border-left: 3px solid #666;
+  }
+
+
+  .hud-item.objective {
+    border-left-color: #c84;
+  }
+
+
+  .hud-item.relics {
+    border-left-color: #4af;
+  }
+
+
+  .battery-bar-container {
+    width: 100px;
+    height: 10px;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+
+  #battery-level {
+    width: 100%;
+    height: 100%;
+    background: #2e7;
+    transition: width 0.3s linear, background-color 0.3s ease;
+  }
+
+
+  #notification {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff3333;
+    font-size: 1.15rem;
+    letter-spacing: 2px;
+    z-index: 6;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    text-shadow: 0 0 8px #000;
+  }
+
+
+  /* Interact prompt when near a collectible */
+  #interact-prompt {
+    position: absolute;
+    bottom: 22%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    z-index: 7;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+
+  #interact-prompt.visible {
+    opacity: 1;
+  }
+
+
+  #interact-prompt kbd {
+    display: inline-block;
+    background: #333;
+    border: 1px solid #777;
+    border-radius: 3px;
+    padding: 1px 7px;
+    margin-right: 6px;
+    color: #fff;
+    font-family: inherit;
+  }
+
+
+  #win-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 8, 4, 0.92);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    text-align: center;
+  }
+
+
+  /* Live collectible map */
+  #map-panel {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 210px;
+    padding: 10px;
+    z-index: 8;
+    color: #e8f5ff;
+    background: rgba(5, 12, 20, 0.86);
+    border: 1px solid rgba(100, 190, 230, 0.65);
+    border-radius: 7px;
+    box-shadow: 0 0 18px rgba(30, 150, 210, 0.18);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  #map-panel strong { display: block; margin-bottom: 7px; color: #8fe8ff; }
+  #collectible-map { display: block; width: 100%; height: auto; background: #101b25; border: 1px solid #344b5b; border-radius: 3px; }
+  .map-legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 8px; color: #c5d4df; letter-spacing: 0; }
+  .map-legend span { white-space: nowrap; }
+  @media (max-width: 600px) { #map-panel { width: 154px; top: 10px; right: 10px; padding: 7px; } .map-legend { gap: 5px 8px; } }
+
+
+  #win-screen h2 {
+    color: #4f8;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    text-shadow: 0 0 12px #0f4;
+  }
+
+
+  #intro{position:absolute;inset:0;z-index:30;background:#030104;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px}
+  #intro .lore{max-width:600px}
+  #intro p{color:#b9aeb0;font-size:1rem;margin:14px 0}
+  .l{opacity:0;animation:fadeIn 2s forwards;animation-delay:var(--d)}
+  @keyframes fadeIn{to{opacity:1}}
+  #flash{position:absolute;inset:0;z-index:15;pointer-events:none;opacity:0;background:#fff}
+  #flash.go{animation:fl .45s steps(2) 3}
+  @keyframes fl{0%{opacity:var(--o,.95);background:#fff}50%{opacity:calc(var(--o,.95)*.8);background:#a00}100%{opacity:0}}
+  #danger{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(170,0,0,.8) 100%)}
+  #hide-overlay{position:absolute;inset:0;z-index:4;display:none;pointer-events:none;background:repeating-linear-gradient(90deg,#000 0 40px,transparent 40px 48px)}
+  #over-screen{position:absolute;inset:0;background:rgba(15,0,0,.94);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:20;text-align:center}
+  #over-screen h2{color:#e22;font-size:2.2rem;letter-spacing:5px;text-shadow:0 0 14px #f00}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+
+
+<div id="canvas-container"></div>
+<div id="vignette"></div>
+<div id="danger"></div>
+<div id="hide-overlay"></div>
+<div id="flash"></div>
+<div id="intro"><div class="lore">
+  <h1 class="l" style="--d:.2s">PROJECT PHOBOS</h1>
+  <p class="l" style="--d:1.5s">2147. Kharon Station drilled into the Martian moon Phobos and broke into a chamber that was never carved by human hands.</p>
+  <p class="l" style="--d:4.5s">Nine days later the station went silent. Its last transmission was a single sentence, repeated for hours: <em>"It has no eyes. It hunts the light."</em></p>
+  <p class="l" style="--d:8s">You are a salvage technician, sent alone to recover five data relics, the crew's memory cores, and carry the truth out through the extraction gate.</p>
+  <p class="l" style="--d:11.5s">The collapsed corridors are not empty. The <strong style="color:#e44">Warden</strong> walks them. It sees your flashlight, hears you run, and it never sleeps.</p>
+  <p class="l" style="--d:15s">Maintenance lockers still line the halls. Hide. Hold your breath. Wait for it to forget you.</p>
+  <button class="btn-play l" id="intro-btn" style="--d:17s">BEGIN BRIEFING</button>
+</div></div>
+<div id="over-screen">
+  <h2>YOU WERE CAUGHT</h2>
+  <p style="color:#c88;max-width:420px;margin:12px 0 24px;">The Warden found you. Phobos keeps another soul.</p>
+  <button class="btn-play" id="over-btn">TRY AGAIN</button>
+</div>
+<div id="crosshair"></div>
+<div id="notification">FLASHLIGHT TOGGLED</div>
+<div id="interact-prompt"><kbd>E</kbd> Pick up</div>
+
+
+<div id="hud">
+  <div class="hud-item" id="battery-hud">
+    <span>FLASHLIGHT [F / RMB]</span>
+    <div class="battery-bar-container">
+      <div id="battery-level"></div>
+    </div>
+  </div>
+  <div class="hud-item relics">
+    <span id="relic-hud">RELICS: 0 / 5</span>
+  </div>
+  <div class="hud-item objective">
+    <span id="objective-hud">OBJECTIVE: COLLECT 5 DATA RELICS</span>
+  </div>
+  <div class="hud-item" id="threat-item" style="border-left-color:#666">
+    <span id="threat-hud">ENTITY: PATROLLING</span>
+  </div>
+</div>
+
+
+<div id="map-panel">
+  <strong>SECTOR MAP</strong>
+  <canvas id="collectible-map" width="240" height="240" aria-label="Live map showing your position and remaining collectibles"></canvas>
+  <div class="map-legend">
+    <span>● You</span><span style="color:#55ddff">◆ Relic</span><span style="color:#65ff78">■ Battery</span><span style="color:#ffcc66">★ Exit</span><span style="color:#ffaa55">▮ Locker</span><span style="color:#ff4444">● Warden</span>
+  </div>
+</div>
+
+
+<div id="instructions">
+  <div class="title-box">
+    <h1>PROJECT PHOBOS</h1>
+    <p>Recover the lost data relics from the dark labyrinth, then reach the extraction gate.</p>
+    <hr style="border: 0; border-top: 1px solid #400; margin: 15px 0;">
+    <p style="text-align: left; font-size: 0.85rem;">
+      <strong>TASKS:</strong><br>
+      • Collect <strong>5 Data Relics</strong> (glowing cyan tablets)<br>
+      • Pick up <strong>batteries</strong> to keep your flashlight alive<br>
+      • Reach the <strong>extraction gate</strong> after all relics are secured<br>• <strong>Avoid the Warden</strong>: it sees your light and hears sprinting. Hide in a <strong>locker</strong> if it chases you<br><br>
+      <strong>CONTROLS:</strong><br>
+      • <strong>WASD</strong> - Move<br>
+      • <strong>MOUSE</strong> - Look Around<br>
+      • <strong>E</strong> - Pick up / Hide in locker / Interact<br>
+      • <strong>F</strong> or <strong>RIGHT CLICK</strong> - Flashlight On/Off<br>
+      • <strong>SHIFT</strong> - Sprint
+    </p>
+    <button class="btn-play" id="start-btn">ENTER THE DARK</button>
+  </div>
+</div>
+
+
+<div id="win-screen">
+  <h2>EXTRACTION COMPLETE</h2>
+  <p style="color:#8fb; max-width:420px; margin:12px 0 24px;">All data relics recovered. The signal is clear. The Warden never found you. You made it out of Phobos.</p>
+  <button class="btn-play" id="restart-btn">RUN AGAIN</button>
+</div>
+
+
+<script>
+// --- Global Game Variables ---
+let scene, camera, renderer, controls;
+let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
+let walls = [];
+let batteries = [];
+let relics = [];
+let exitGate = null;
+let exitActive = false;
+let gameWon = false;
+const clock = new THREE.Clock();
+
+
+// Monster / hiding / game state
+const D4 = [[1,0],[-1,0],[0,1],[0,-1]];
+const wallCells = new Set();
+let openCells = [], lockers = [], hiding = null, over = false, scareT = -1, scareC = null, scareD = null, savedTorch = true;
+const M = { g: null, light: null, state: 'PATROL', path: [], timer: 0, lookT: 0, repath: 0, lost: 0, stepT: 0, sees: false, moving: false };
+
+
+// Collectible / task tracking
+const RELIC_TARGET = 5;
+let relicsCollected = 0;
+
+
+// Nearby interactable (for E key)
+let nearbyItem = null; // { type: 'battery'|'relic'|'exit', mesh, index }
+
+
+// Torch / Flashlight vars
+let torchLight, torchTarget, ambientLight, hemiLight;
+let torchOn = true;
+let batteryPower = 100.0;
+let flashlightSwayTime = 0;
+
+
+// Camera bobbing
+let defaultCamY = 1.8;
+let walkCycle = 0;
+
+
+// Web Audio
+let audioCtx = null;
+let isAudioInitialized = false;
+let lastStepTime = 0;
+let stepInterval = 0.55;
+
+
+window.onload = function() {
+  initScene();
+  initListeners();
+  animate();
+};
+
+
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x101925);
+  scene.fog = new THREE.FogExp2(0x101925, 0.025);
+
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+
+  // Soft default lighting so the maze is faintly visible
+  ambientLight = new THREE.AmbientLight(0x8497b5, 1.15);
+  scene.add(ambientLight);
+
+
+  hemiLight = new THREE.HemisphereLight(0x91b5d8, 0x343746, 0.85);
+  scene.add(hemiLight);
+
+
+  const moonLight = new THREE.DirectionalLight(0x91a9cf, 0.65);
+  moonLight.position.set(20, 40, -15);
+  scene.add(moonLight);
+
+
+  // Flashlight
+  torchLight = new THREE.SpotLight(0xfffaed, 4.5, 28, Math.PI / 6, 0.45, 1.5);
+  torchLight.castShadow = true;
+  torchLight.shadow.mapSize.width = 1024;
+  torchLight.shadow.mapSize.height = 1024;
+  torchLight.shadow.camera.near = 0.2;
+  torchLight.shadow.camera.far = 30;
+
+
+  torchTarget = new THREE.Object3D();
+  scene.add(torchTarget);
+  torchLight.target = torchTarget;
+
+
+  camera.add(torchLight);
+  torchLight.position.set(0.2, -0.2, 0.1);
+
+
+  controls = new THREE.PointerLockControls(camera, document.body);
+  scene.add(controls.getObject());
+  controls.getObject().position.set(0, defaultCamY, 0);
+
+
+  createFloor();
+  generateMaze();
+  buildNav();
+  spawnBatteryPickups();
+  spawnRelics();
+  createExitGate();
+  spawnLockers();
+  buildMonster();
+  updateHUD();
+}
+
+
+function createDarkTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#111113';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 3000; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const val = Math.floor(Math.random() * 30);
+    ctx.fillStyle = `rgb(${val}, ${val}, ${val})`;
+    ctx.fillRect(x, y, 2, 2);
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+
+function createFloor() {
+  const floorTex = createDarkTexture();
+  floorTex.wrapS = THREE.RepeatWrapping;
+  floorTex.wrapT = THREE.RepeatWrapping;
+  floorTex.repeat.set(40, 40);
+
+
+  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: floorTex,
+    roughness: 0.85,
+    metalness: 0.2
+  });
+
+
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+}
+
+
+function generateMaze() {
+  const wallTex = createDarkTexture();
+  wallTex.wrapS = THREE.RepeatWrapping;
+  wallTex.wrapT = THREE.RepeatWrapping;
+  wallTex.repeat.set(1, 2);
+
+
+  const wallGeo = new THREE.BoxGeometry(4, 5, 4);
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: wallTex,
+    roughness: 0.9,
+    metalness: 0.1
+  });
+
+
+  const mazeSize = 24;
+  for (let x = -mazeSize; x <= mazeSize; x += 2) {
+    for (let z = -mazeSize; z <= mazeSize; z += 2) {
+      if (Math.abs(x) <= 2 && Math.abs(z) <= 2) continue;
+      if (Math.abs(x) === mazeSize || Math.abs(z) === mazeSize || Math.random() < 0.38) {
+        const wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.position.set(x * 2, 2.5, z * 2);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        scene.add(wall);
+        walls.push(new THREE.Box3().setFromObject(wall));
+        wallCells.add((x / 2) + ',' + (z / 2));
+      }
+    }
+  }
+}
+
+
+function spawnBatteryPickups() {
+  const batteryGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.32, 12);
+  const batteryMat = new THREE.MeshStandardMaterial({
+    color: 0x33ff55,
+    emissive: 0x114411,
+    emissiveIntensity: 0.6
+  });
+
+
+  for (let i = 0; i < 6; i++) {
+    const bat = new THREE.Mesh(batteryGeo, batteryMat);
+    const c = pickCell(8); const rx = c.x + (Math.random() - 0.5) * 2, rz = c.z + (Math.random() - 0.5) * 2;
+    bat.position.set(rx, 0.22, rz);
+    scene.add(bat);
+    batteries.push(bat);
+  }
+}
+
+
+function spawnRelics() {
+  const relicGeo = new THREE.BoxGeometry(0.45, 0.55, 0.18);
+  const relicMat = new THREE.MeshStandardMaterial({
+    color: 0x44ccff,
+    emissive: 0x1188aa,
+    emissiveIntensity: 0.9,
+    metalness: 0.4,
+    roughness: 0.3
+  });
+
+
+  for (let i = 0; i < RELIC_TARGET; i++) {
+    const relic = new THREE.Mesh(relicGeo, relicMat);
+    const c = pickCell(16); const rx = c.x + (Math.random() - 0.5) * 2, rz = c.z + (Math.random() - 0.5) * 2;
+    relic.position.set(rx, 0.9, rz);
+    relic.userData = { type: 'relic', bobOffset: Math.random() * Math.PI * 2 };
+    scene.add(relic);
+    relics.push(relic);
+
+
+    const glow = new THREE.PointLight(0x33aaff, 0.7, 6, 2);
+    glow.position.copy(relic.position);
+    glow.position.y += 0.3;
+    scene.add(glow);
+    relic.userData.glow = glow;
+  }
+}
+
+
+function createExitGate() {
+  const e0 = pickCell(32), ex = e0.x, ez = e0.z;
+  const gateGeo = new THREE.BoxGeometry(3.2, 4.5, 0.6);
+  const gateMat = new THREE.MeshStandardMaterial({
+    color: 0x222228,
+    emissive: 0x001100,
+    emissiveIntensity: 0.2,
+    metalness: 0.6,
+    roughness: 0.4
+  });
+
+
+  exitGate = new THREE.Mesh(gateGeo, gateMat);
+  exitGate.position.set(ex, 2.25, ez);
+  scene.add(exitGate);
+
+
+  const pillarGeo = new THREE.BoxGeometry(0.5, 5, 0.5);
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x333340, metalness: 0.5 });
+  const p1 = new THREE.Mesh(pillarGeo, pillarMat);
+  p1.position.set(ex - 1.8, 2.5, ez);
+  const p2 = new THREE.Mesh(pillarGeo, pillarMat);
+  p2.position.set(ex + 1.8, 2.5, ez);
+  scene.add(p1);
+  scene.add(p2);
+
+
+  const statusLight = new THREE.PointLight(0x442200, 0.4, 8);
+  statusLight.position.set(ex, 4.2, ez + 0.5);
+  scene.add(statusLight);
+  exitGate.userData.statusLight = statusLight;
+}
+
+
+function initListeners() {
+  const startBtn = document.getElementById('start-btn');
+  const instructions = document.getElementById('instructions');
+  const restartBtn = document.getElementById('restart-btn');
+  const intro = document.getElementById('intro');
+  try { if (sessionStorage.getItem('phobosSeen')) intro.style.display = 'none'; } catch (e) {}
+  document.getElementById('intro-btn').addEventListener('click', () => {
+    intro.style.display = 'none';
+    try { sessionStorage.setItem('phobosSeen', '1'); } catch (e) {}
+  });
+  document.getElementById('over-btn').addEventListener('click', () => location.reload());
+
+
+  startBtn.addEventListener('click', () => {
+    controls.lock();
+    initAudioEngine();
+  });
+
+
+  restartBtn.addEventListener('click', () => {
+    location.reload();
+  });
+
+
+  controls.addEventListener('lock', () => {
+    instructions.style.display = 'none';
+  });
+
+
+  controls.addEventListener('unlock', () => {
+    if (!gameWon && !over) instructions.style.display = 'flex';
+  });
+
+
+  document.addEventListener('keydown', e => handleKey(e.code, true));
+  document.addEventListener('keyup', e => handleKey(e.code, false));
+
+
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (controls.isLocked) toggleTorch();
+  });
+
+
+  window.addEventListener('resize', onWindowResize);
+}
+
+
+function handleKey(code, pressed) {
+  switch (code) {
+    case 'KeyW': case 'ArrowUp': moveForward = pressed; break;
+    case 'KeyS': case 'ArrowDown': moveBackward = pressed; break;
+    case 'KeyA': case 'ArrowLeft': moveLeft = pressed; break;
+    case 'KeyD': case 'ArrowRight': moveRight = pressed; break;
+    case 'ShiftLeft': case 'ShiftRight': isSprinting = pressed; break;
+    case 'KeyF':
+      if (pressed && controls.isLocked) toggleTorch();
+      break;
+    case 'KeyE':
+      if (pressed && controls.isLocked) tryInteract();
+      break;
+  }
+}
+
+
+function toggleTorch() {
+  if (batteryPower <= 0) return;
+  torchOn = !torchOn;
+  torchLight.visible = torchOn;
+  playClickSound();
+  showNotification(torchOn ? "FLASHLIGHT ON" : "FLASHLIGHT OFF");
+}
+
+
+function showNotification(txt) {
+  const el = document.getElementById('notification');
+  el.innerText = txt;
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 1400);
+}
+
+
+function setInteractPrompt(visible, label) {
+  const el = document.getElementById('interact-prompt');
+  if (visible) {
+    el.innerHTML = `<kbd>E</kbd> ${label}`;
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+  }
+}
+
+
+function drawCollectibleMap() {
+  const canvas = document.getElementById('collectible-map');
+  if (!canvas || !controls) return;
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const halfWorld = 48;
+  const toMap = (x, z) => ({
+    x: ((x + halfWorld) / (halfWorld * 2)) * size,
+    y: ((z + halfWorld) / (halfWorld * 2)) * size
+  });
+
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#101b25';
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = 'rgba(130, 170, 195, 0.14)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const p = (size / 4) * i;
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(size, p); ctx.stroke();
+  }
+
+
+  // Remaining relics
+  for (const relic of relics) {
+    const p = toMap(relic.position.x, relic.position.z);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = '#55ddff'; ctx.shadowColor = '#22bbff'; ctx.shadowBlur = 9;
+    ctx.fillRect(-4, -4, 8, 8); ctx.restore();
+  }
+  // Remaining batteries
+  for (const battery of batteries) {
+    const p = toMap(battery.position.x, battery.position.z);
+    ctx.fillStyle = '#65ff78'; ctx.shadowColor = '#35ff55'; ctx.shadowBlur = 7;
+    ctx.fillRect(p.x - 3.5, p.y - 3.5, 7, 7); ctx.shadowBlur = 0;
+  }
+  ctx.fillStyle = '#ffaa55'; ctx.shadowBlur = 0;
+  for (const l of lockers) { const p = toMap(l.px, l.pz); ctx.fillRect(p.x - 2, p.y - 3.5, 4, 7); }
+  // Extraction gate
+  if (exitGate) {
+    const p = toMap(exitGate.position.x, exitGate.position.z);
+    ctx.fillStyle = exitActive ? '#65ff9a' : '#ffcc66';
+    ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('★', p.x, p.y + 5);
+  }
+  // Enemy (Warden) marker
+  if (M.g) {
+    const e = toMap(M.g.position.x, M.g.position.z);
+    const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * (M.state === 'CHASE' ? 10 : 3));
+    ctx.save();
+    ctx.fillStyle = '#ff2222'; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 8 + pulse * 8;
+    ctx.beginPath(); ctx.arc(e.x, e.y, 4 + pulse * 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // Player marker and facing direction
+  const player = controls.getObject();
+  const p = toMap(player.position.x, player.position.z);
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  ctx.save(); ctx.translate(p.x, p.y);
+  ctx.rotate(Math.atan2(direction.x, direction.z));
+  ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+
+function updateHUD() {
+  document.getElementById('relic-hud').innerText = `RELICS: ${relicsCollected} / ${RELIC_TARGET}`;
+  const objEl = document.getElementById('objective-hud');
+  if (relicsCollected < RELIC_TARGET) {
+    const left = RELIC_TARGET - relicsCollected;
+    objEl.innerText = `OBJECTIVE: COLLECT ${left} MORE DATA RELIC${left === 1 ? '' : 'S'}`;
+  } else if (!exitActive) {
+    objEl.innerText = 'OBJECTIVE: FIND THE EXTRACTION GATE';
+  } else {
+    objEl.innerText = 'OBJECTIVE: ENTER THE EXTRACTION GATE';
+  }
+}
+
+
+function activateExit() {
+  exitActive = true;
+  if (exitGate) {
+    exitGate.material.emissive.setHex(0x00aa44);
+    exitGate.material.emissiveIntensity = 0.7;
+    if (exitGate.userData.statusLight) {
+      exitGate.userData.statusLight.color.setHex(0x00ff66);
+      exitGate.userData.statusLight.intensity = 1.2;
+    }
+  }
+  showNotification("EXTRACTION GATE ONLINE — PRESS E NEAR IT");
+  updateHUD();
+}
+
+
+function triggerWin() {
+  if (gameWon) return;
+  gameWon = true;
+  controls.unlock();
+  document.getElementById('win-screen').style.display = 'flex';
+  setInteractPrompt(false);
+  showNotification("SIGNAL LOCKED — YOU ESCAPED");
+}
+
+
+function tryInteract() {
+  if (hiding) { leaveLocker(); return; }
+  if (nearbyItem && nearbyItem.type === 'locker') { enterLocker(nearbyItem.l); return; }
+  if (!nearbyItem) return;
+
+
+  if (nearbyItem.type === 'battery') {
+    const bat = nearbyItem.mesh;
+    scene.remove(bat);
+    batteries.splice(nearbyItem.index, 1);
+    batteryPower = Math.min(100, batteryPower + 40);
+    document.getElementById('battery-level').style.width = batteryPower + '%';
+    if (batteryPower > 50) {
+      document.getElementById('battery-level').style.backgroundColor = '#2e7';
+    }
+    showNotification("+40% BATTERY RECHARGED");
+    playCollectSound(false);
+    nearbyItem = null;
+    setInteractPrompt(false);
+  } else if (nearbyItem.type === 'relic') {
+    const relic = nearbyItem.mesh;
+    if (relic.userData.glow) scene.remove(relic.userData.glow);
+    scene.remove(relic);
+    relics.splice(nearbyItem.index, 1);
+    relicsCollected++;
+    playCollectSound(true);
+    showNotification(`DATA RELIC SECURED (${relicsCollected}/${RELIC_TARGET})`);
+    updateHUD();
+    nearbyItem = null;
+    setInteractPrompt(false);
+
+
+    if (relicsCollected >= RELIC_TARGET) {
+      activateExit();
+    }
+  } else if (nearbyItem.type === 'exit' && exitActive) {
+    triggerWin();
+  }
+}
+
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+
+// --- Audio ---
+function initAudioEngine() {
+  if (isAudioInitialized) return;
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+
+
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const droneGain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(45, audioCtx.currentTime);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(46.5, audioCtx.currentTime);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(160, audioCtx.currentTime);
+    droneGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(droneGain);
+    droneGain.connect(audioCtx.destination);
+    osc1.start();
+    osc2.start();
+
+
+    setInterval(() => {
+      if (audioCtx) {
+        const freq = 120 + Math.sin(Date.now() * 0.001) * 60;
+        filter.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.5);
+      }
+    }, 500);
+
+
+    scheduleRandomSpookySFX();
+    isAudioInitialized = true;
+  } catch (e) {
+    console.warn("Web Audio API not fully supported", e);
+  }
+}
+
+
+function playClickSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+
+function playCollectSound(high = false) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  const startF = high ? 880 : 520;
+  const endF = high ? 1400 : 780;
+  osc.frequency.setValueAtTime(startF, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(endF, audioCtx.currentTime + 0.12);
+  gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+
+function playFootstepSound() {
+  if (!audioCtx) return;
+  const bufferSize = audioCtx.sampleRate * 0.08;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(300 + Math.random() * 200, audioCtx.currentTime);
+  filter.Q.setValueAtTime(1.5, audioCtx.currentTime);
+  const gain = audioCtx.createGain();
+  const vol = isSprinting ? 0.25 : 0.12;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  noise.start();
+}
+
+
+function scheduleRandomSpookySFX() {
+  const nextTime = 8000 + Math.random() * 15000;
+  setTimeout(() => {
+    if (controls.isLocked && !gameWon) triggerSpookySound();
+    scheduleRandomSpookySFX();
+  }, nextTime);
+}
+
+
+function triggerSpookySound() {
+  if (!audioCtx) return;
+  const type = Math.floor(Math.random() * 3);
+  const now = audioCtx.currentTime;
+  if (type === 0) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.linearRampToValueAtTime(200, now + 1.2);
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 1.2);
+  } else if (type === 1) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 2.0);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 2.0);
+  }
+}
+
+
+
+
+// ================= NAVIGATION =================
+function isOpen(cx, cz) { return Math.abs(cx) < 12 && Math.abs(cz) < 12 && !wallCells.has(cx + ',' + cz); }
+function cellOf(p) { return [Math.round(p.x / 4), Math.round(p.z / 4)]; }
+
+
+function buildNav() {
+  const seen = new Set(['0,0']), q = [[0, 0]];
+  for (let i = 0; i < q.length; i++) {
+    for (const [dx, dz] of D4) {
+      const n = [q[i][0] + dx, q[i][1] + dz];
+      if (isOpen(n[0], n[1]) && !seen.has(n + '')) { seen.add(n + ''); q.push(n); }
+    }
+  }
+  openCells = q; // only cells reachable from the start
+}
+
+
+function pickCell(minD) {
+  const l = openCells.filter(c => Math.hypot(c[0], c[1]) * 4 >= minD);
+  const c = l[Math.floor(Math.random() * l.length)] || openCells[openCells.length - 1];
+  return { cx: c[0], cz: c[1], x: c[0] * 4, z: c[1] * 4 };
+}
+
+
+function bfs(a, b) {
+  const k = c => c[0] + ',' + c[1], prev = new Map([[k(a), null]]), q = [a];
+  for (let i = 0; i < q.length; i++) {
+    const c = q[i];
+    if (c[0] === b[0] && c[1] === b[1]) break;
+    for (const [dx, dz] of D4) {
+      const n = [c[0] + dx, c[1] + dz];
+      if (isOpen(n[0], n[1]) && !prev.has(k(n))) { prev.set(k(n), c); q.push(n); }
+    }
+  }
+  const out = []; let c = prev.has(k(b)) ? b : null;
+  while (c && k(c) !== k(a)) { out.unshift(c); c = prev.get(k(c)); }
+  return out;
+}
+
+
+// ================= LOCKERS (HIDING PLACES) =================
+function spawnLockers() {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x2c3a36, roughness: 0.5, metalness: 0.6 });
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x55665f, roughness: 0.4, metalness: 0.7 });
+  const used = new Set();
+  for (let i = 0; i < 7; i++) {
+    let c, t = 0;
+    do { c = pickCell(10); } while (used.has(c.cx + ',' + c.cz) && t++ < 20);
+    used.add(c.cx + ',' + c.cz);
+    const [dx, dz] = D4[Math.floor(Math.random() * 4)], px = c.x + dx * 1.4, pz = c.z + dz * 1.4, ax = dx !== 0;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(ax ? 1 : 1.6, 2.4, ax ? 1.6 : 1), mat);
+    m.position.set(px, 1.2, pz); m.castShadow = m.receiveShadow = true; scene.add(m);
+    const d = new THREE.Mesh(new THREE.BoxGeometry(ax ? 0.05 : 1.2, 2.1, ax ? 1.2 : 0.05), doorMat);
+    d.position.set(px - dx * 0.52, 1.2, pz - dz * 0.52); scene.add(d);
+    walls.push(new THREE.Box3().setFromObject(m));
+    lockers.push({ x: c.x, z: c.z, px, pz, dx, dz });
+  }
+}
+
+
+function enterLocker(l) {
+  const dist = Math.hypot(camera.position.x - M.g.position.x, camera.position.z - M.g.position.z);
+  if (M.state === 'CHASE' && dist < 5) { showNotification("TOO CLOSE. IT'S ON YOU!"); return; }
+  hiding = l; savedTorch = torchOn; torchOn = false; torchLight.visible = false;
+  camera.position.set(l.px, defaultCamY, l.pz);
+  camera.rotation.order = 'YXZ'; camera.rotation.set(0, Math.atan2(l.dx, l.dz), 0);
+  document.getElementById('hide-overlay').style.display = 'block';
+  M.sees = false;
+  if (M.state === 'CHASE') { setState('WAIT'); M.timer = 4; M.path = []; }
+  playClickSound(); showNotification('HIDING... HOLD STILL');
+}
+
+
+function leaveLocker() {
+  const l = hiding; hiding = null;
+  camera.position.set(l.x, defaultCamY, l.z);
+  if (savedTorch && batteryPower > 0) { torchOn = true; torchLight.visible = true; }
+  document.getElementById('hide-overlay').style.display = 'none';
+  playClickSound();
+}
+
+
+// ================= THE WARDEN (MONSTER) =================
+function buildMonster() {
+  const g = new THREE.Group();
+  const dark = new THREE.MeshStandardMaterial({ color: 0x060606, roughness: 0.6 });
+  const pale = new THREE.MeshStandardMaterial({ color: 0xaaa59a, roughness: 0.5 });
+  const white = new THREE.MeshBasicMaterial({ color: 0xeeeedd });
+  const red = new THREE.MeshBasicMaterial({ color: 0xff1010 });
+  const add = (geo, mat, x, y, z, r) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); if (r) Object.assign(m.rotation, r); g.add(m); return m; };
+  add(new THREE.CylinderGeometry(0.35, 0.5, 1.7, 10), dark, 0, 1.9, 0);
+  add(new THREE.CylinderGeometry(0.14, 0.1, 1.5, 8), dark, -0.28, 0.75, 0);
+  add(new THREE.CylinderGeometry(0.14, 0.1, 1.5, 8), dark, 0.28, 0.75, 0);
+  add(new THREE.CylinderGeometry(0.07, 0.05, 2.1, 6), dark, -0.65, 1.5, 0.3, { x: -0.3 });
+  add(new THREE.CylinderGeometry(0.07, 0.05, 2.1, 6), dark, 0.65, 1.5, 0.3, { x: -0.3 });
+  add(new THREE.SphereGeometry(0.38, 16, 12), pale, 0, 3.05, 0.05).scale.set(0.8, 1.3, 0.9);
+  add(new THREE.SphereGeometry(0.08, 8, 8), red, -0.14, 3.2, 0.3);
+  add(new THREE.SphereGeometry(0.08, 8, 8), red, 0.14, 3.2, 0.3);
+  add(new THREE.BoxGeometry(0.32, 0.38, 0.1), dark, 0, 2.82, 0.33);
+  for (let i = 0; i < 5; i++) add(new THREE.ConeGeometry(0.028, 0.14, 4), white, -0.12 + i * 0.06, 2.95, 0.39, { x: Math.PI });
+  M.light = new THREE.PointLight(0xff2200, 0.9, 9, 2); M.light.position.set(0, 2.6, 0.7); g.add(M.light);
+  const c = pickCell(40); g.position.set(c.x, 0, c.z);
+  scene.add(g); M.g = g;
+}
+
+
+const _r = new THREE.Ray(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _h = new THREE.Vector3();
+function los() {
+  const g = M.g.position, p = camera.position;
+  _o.set(g.x, 1.8, g.z); _d.set(p.x - g.x, 0, p.z - g.z);
+  const L = _d.length(); _d.normalize(); _r.set(_o, _d);
+  for (const w of walls) {
+    if (Math.abs((w.min.x + w.max.x) / 2 - g.x) > L + 3 || Math.abs((w.min.z + w.max.z) / 2 - g.z) > L + 3) continue;
+    if (_r.intersectBox(w, _h) && _h.distanceTo(_o) < L - 0.6) return false;
+  }
+  return true;
+}
+
+
+// Can the Warden sense the player right now?
+function canDetect(dist) {
+  if (hiding) return false;
+  if (dist < 3.2) return true;                       // too close
+  if (isSprinting && dist < 11) return true;         // heard you run
+  if (dist > (torchOn ? 26 : 13)) return false;      // flashlight makes you visible from afar
+  if (dist > 6) {                                    // must be facing you when not close
+    const g = M.g, f = Math.sin(g.rotation.y) * (camera.position.x - g.position.x) + Math.cos(g.rotation.y) * (camera.position.z - g.position.z);
+    if (f / dist < 0.35) return false;
+  }
+  return los();
+}
+
+
+function setState(st) {
+  M.state = st;
+  const t = { PATROL: ['ENTITY: PATROLLING', '#666'], CHASE: ['ENTITY: HUNTING YOU', '#f22'], WAIT: ['ENTITY: LISTENING...', '#fa3'] }[st];
+  if (!t) return;
+  document.getElementById('threat-hud').innerText = t[0];
+  document.getElementById('threat-item').style.borderLeftColor = t[1];
+}
+
+
+function startChase() {
+  setState('CHASE'); M.lost = 0; M.repath = 0;
+  playScream(1.0, 0.4); doFlash(0.45);
+  showNotification('IT SEES YOU. RUN!');
+}
+
+
+function step(nx, nz, s) {
+  const g = M.g; g.position.x += nx * s; g.position.z += nz * s; M.moving = true;
+  let d = Math.atan2(nx, nz) - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+  g.rotation.y += d * 0.2;
+}
+function followPath(dt, sp) {
+  const g = M.g;
+  if (!M.path.length) return;
+  const t = M.path[0], dx = t[0] * 4 - g.position.x, dz = t[1] * 4 - g.position.z, d = Math.hypot(dx, dz);
+  if (d < 0.3) { M.path.shift(); return; }
+  step(dx / d, dz / d, sp * dt);
+}
+
+
+function updateMonster(dt) {
+  const m = M, g = m.g, p = camera.position;
+  const dx = p.x - g.position.x, dz = p.z - g.position.z, dist = Math.hypot(dx, dz);
+  m.moving = false;
+  m.lookT -= dt;
+  if (m.lookT <= 0) { m.lookT = 0.2; m.sees = canDetect(dist); }
+
+
+  if (m.state === 'PATROL') {            // 1) patrol between random waypoints
+    if (m.sees) startChase();
+    else {
+      if (!m.path.length) { const w = pickCell(0); m.path = bfs(cellOf(g.position), [w.cx, w.cz]); }
+      followPath(dt, 2.4);
+    }
+  } else if (m.state === 'CHASE') {      // 2) chase the player
+    if (m.sees) m.lost = 0; else m.lost += dt;
+    if (m.lost > 7) { setState('PATROL'); m.path = []; }
+    m.repath -= dt;
+    if (m.repath <= 0) { m.repath = 0.35; m.path = bfs(cellOf(g.position), cellOf(p)); }
+    if ((m.sees && dist < 4) || !m.path.length) step(dx / dist, dz / dist, 5.4 * dt);
+    else followPath(dt, 5.4);
+    if (dist < 1.4 && !hiding) jumpScare();
+  } else if (m.state === 'WAIT') {       // 3) player hid: wait 4s, then back to patrol
+    m.timer -= dt;
+    g.rotation.y += Math.sin(clock.getElapsedTime() * 2) * dt * 1.5;
+    if (m.sees) startChase();
+    else if (m.timer <= 0) { setState('PATROL'); m.path = []; }
+  }
+
+
+  g.rotation.z = m.moving ? Math.sin(clock.getElapsedTime() * (m.state === 'CHASE' ? 12 : 6)) * 0.05 : 0;
+  m.stepT -= dt;
+  if (m.moving && m.stepT <= 0) { playThud(Math.max(0, 1 - dist / 30)); m.stepT = m.state === 'CHASE' ? 0.3 : 0.6; }
+  document.getElementById('danger').style.opacity = m.state === 'CHASE' ? Math.max(0, Math.min(1, 1.2 - dist / 22)) : 0;
+}
+
+
+// ================= JUMP SCARE =================
+function doFlash(o) {
+  const f = document.getElementById('flash');
+  f.classList.remove('go'); void f.offsetWidth;
+  f.style.setProperty('--o', o); f.classList.add('go');
+}
+
+
+function jumpScare() {
+  if (over) return;
+  over = true; setInteractPrompt(false);
+  document.getElementById('danger').style.opacity = 0;
+  const d = new THREE.Vector3(); camera.getWorldDirection(d); d.y = 0; d.normalize();
+  scareC = camera.position.clone(); scareD = d; scareT = 0;
+  M.g.scale.setScalar(1.15); M.g.rotation.set(0, Math.atan2(-d.x, -d.z), 0);
+  doFlash(0.95); playScream(2.4, 1);
+  setTimeout(() => doFlash(0.8), 700);
+  setTimeout(() => {
+    controls.unlock();
+    document.getElementById('over-screen').style.display = 'flex';
+  }, 2500);
+}
+
+
+function scareTick(dt) {
+  scareT += dt;
+  const k = 1.15 - Math.min(0.6, scareT * 1.6), g = M.g;
+  g.position.set(scareC.x + scareD.x * k, -1.6, scareC.z + scareD.z * k);
+  camera.lookAt(g.position.x, 1.9, g.position.z);
+  camera.rotation.z = (Math.random() - 0.5) * 0.14;
+  M.light.intensity = Math.random() * 6;
+}
+
+
+function playScream(len, vol) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  [[700, 1900, 'sawtooth'], [930, 2300, 'sawtooth'], [110, 55, 'square']].forEach(([f0, f1, type]) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + 0.25);
+    o.frequency.linearRampToValueAtTime(f0 * 1.3, t + len);
+    g.gain.setValueAtTime(0.35 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + len);
+  });
+  const n = Math.floor(audioCtx.sampleRate * len), buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate), data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = audioCtx.createBufferSource(), ng = audioCtx.createGain();
+  src.buffer = buf; ng.gain.value = 0.7 * vol; src.connect(ng); ng.connect(audioCtx.destination); src.start(t);
+}
+
+
+function playThud(v) {
+  if (!audioCtx || v <= 0.02) return;
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(75, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.12);
+  g.gain.setValueAtTime(0.6 * v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.16);
+}
+
+
+// --- Collision ---
+function getPlayerBox(pos) {
+  return new THREE.Box3(
+    new THREE.Vector3(pos.x - 0.4, pos.y - 1.5, pos.z - 0.4),
+    new THREE.Vector3(pos.x + 0.4, pos.y + 0.3, pos.z + 0.4)
+  );
+}
+
+
+function checkCollision(pos) {
+  const pBox = getPlayerBox(pos);
+  for (const w of walls) {
+    if (pBox.intersectsBox(w)) return true;
+  }
+  return false;
+}
+
+
+// --- Main Update ---
+function updateMovement(dt) {
+  if (!controls.isLocked || gameWon || over) return;
+  if (hiding) { setInteractPrompt(true, 'Leave Locker'); return; }
+
+
+  const speed = isSprinting ? 7.5 : 4.2;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  dir.y = 0;
+  dir.normalize();
+
+
+  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+  const move = new THREE.Vector3();
+
+
+  if (moveForward) move.add(dir);
+  if (moveBackward) move.sub(dir);
+  if (moveRight) move.sub(right);
+  if (moveLeft) move.add(right);
+
+
+  const isMoving = move.lengthSq() > 0;
+
+
+  if (isMoving) {
+    move.normalize();
+    const nextPos = controls.getObject().position.clone().addScaledVector(move, speed * dt);
+
+
+    if (!checkCollision(nextPos)) {
+      controls.getObject().position.copy(nextPos);
+    } else {
+      const nextPosX = controls.getObject().position.clone();
+      nextPosX.x = nextPos.x;
+      if (!checkCollision(nextPosX)) controls.getObject().position.x = nextPos.x;
+
+
+      const nextPosZ = controls.getObject().position.clone();
+      nextPosZ.z = nextPos.z;
+      if (!checkCollision(nextPosZ)) controls.getObject().position.z = nextPos.z;
+    }
+
+
+    stepInterval = isSprinting ? 0.32 : 0.52;
+    if (clock.getElapsedTime() - lastStepTime > stepInterval) {
+      playFootstepSound();
+      lastStepTime = clock.getElapsedTime();
+    }
+
+
+    walkCycle += dt * (isSprinting ? 14 : 9);
+    camera.position.y = defaultCamY + Math.sin(walkCycle) * (isSprinting ? 0.08 : 0.04);
+  } else {
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, defaultCamY, dt * 5);
+  }
+
+
+  // Flashlight battery
+  if (torchOn) {
+    batteryPower = Math.max(0, batteryPower - dt * 0.8);
+    document.getElementById('battery-level').style.width = batteryPower + '%';
+
+
+    if (batteryPower < 20) {
+      document.getElementById('battery-level').style.backgroundColor = '#e33';
+      if (Math.random() < 0.15) torchLight.intensity = Math.random() * 1.5;
+      else torchLight.intensity = 4.5;
+    } else if (batteryPower < 50) {
+      document.getElementById('battery-level').style.backgroundColor = '#ea2';
+    } else {
+      document.getElementById('battery-level').style.backgroundColor = '#2e7';
+    }
+
+
+    if (batteryPower <= 0) {
+      torchOn = false;
+      torchLight.visible = false;
+      showNotification("BATTERY DIED!");
+    }
+
+
+    flashlightSwayTime += dt * 2;
+    const targetVector = new THREE.Vector3();
+    camera.getWorldDirection(targetVector);
+    torchTarget.position.copy(camera.position).add(targetVector.multiplyScalar(10));
+    torchTarget.position.x += Math.sin(flashlightSwayTime * 0.8) * 0.1;
+    torchTarget.position.y += Math.cos(flashlightSwayTime * 1.2) * 0.1;
+  }
+
+
+  const playerPos = controls.getObject().position;
+
+
+  // Animate relics (bob + spin)
+  for (const relic of relics) {
+    relic.position.y = 0.9 + Math.sin(clock.getElapsedTime() * 2 + relic.userData.bobOffset) * 0.12;
+    relic.rotation.y += dt * 1.4;
+  }
+
+
+  // Animate batteries slightly
+  for (const bat of batteries) {
+    bat.rotation.y += dt * 2;
+  }
+
+
+  // --- Proximity detection for E interact ---
+  nearbyItem = null;
+  let bestDist = 1.7;
+
+
+  for (let i = 0; i < batteries.length; i++) {
+    const d = playerPos.distanceTo(batteries[i].position);
+    if (d < bestDist) {
+      bestDist = d;
+      nearbyItem = { type: 'battery', mesh: batteries[i], index: i };
+    }
+  }
+
+
+  for (let i = 0; i < relics.length; i++) {
+    const d = playerPos.distanceTo(relics[i].position);
+    if (d < bestDist) {
+      bestDist = d;
+      nearbyItem = { type: 'relic', mesh: relics[i], index: i };
+    }
+  }
+
+
+  if (exitGate && exitActive) {
+    const d = playerPos.distanceTo(exitGate.position);
+    if (d < 2.5 && d < bestDist) {
+      nearbyItem = { type: 'exit', mesh: exitGate, index: -1 };
+    }
+  }
+
+
+  if (!nearbyItem) {
+    for (const l of lockers) {
+      if (Math.hypot(playerPos.x - l.px, playerPos.z - l.pz) < 2.3) { nearbyItem = { type: 'locker', l }; break; }
+    }
+  }
+
+
+  // Show / hide interact prompt
+  if (nearbyItem) {
+    if (nearbyItem.type === 'battery') setInteractPrompt(true, 'Pick up Battery');
+    else if (nearbyItem.type === 'relic') setInteractPrompt(true, 'Secure Data Relic');
+    else if (nearbyItem.type === 'exit') setInteractPrompt(true, 'Enter Extraction Gate');
+    else if (nearbyItem.type === 'locker') setInteractPrompt(true, 'Hide in Locker');
+  } else {
+    setInteractPrompt(false);
+  }
+}
+
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  updateMovement(dt);
+  if (controls.isLocked && !gameWon && !over) updateMonster(dt);
+  if (over && scareT >= 0) scareTick(dt);
+  drawCollectibleMap();
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>

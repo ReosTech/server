@@ -1,0 +1,3731 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=0ff90e2e-a0e0-4b46-9b5c-d7372a21c976
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      SECTOR 2147: SILENT RUN
+    </title>
+    <style>
+      * {
+    box-sizing: border-box;
+    user-select: none;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: 'Courier New', Courier, monospace;
+    color: #eee;
+  }
+  
+  body.game-locked, body.game-locked * { cursor: none !important; }
+
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  #vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.42), inset 0 0 35px rgba(0, 0, 0, 0.28);
+    z-index: 5;
+  }
+
+  #crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 50, 50, 0.7);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 6;
+    box-shadow: 0 0 4px #f00;
+  }
+
+  #instructions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(4, 2, 6, 0.93);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .title-box {
+    border: 2px solid #800;
+    background: rgba(20, 0, 0, 0.6);
+    padding: 30px 50px;
+    border-radius: 8px;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
+    max-width: 540px;
+  }
+
+  h1 {
+    color: #e22;
+    font-size: 2.2rem;
+    letter-spacing: 5px;
+    margin-top: 0;
+    text-shadow: 0 0 10px #f00;
+  }
+
+  p {
+    color: #aaa;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .btn-play {
+    margin-top: 25px;
+    padding: 12px 30px;
+    background: #400;
+    color: #fff;
+    border: 1px solid #900;
+    font-size: 1.1rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    letter-spacing: 2px;
+  }
+
+  .btn-play:hover {
+    background: #800;
+    box-shadow: 0 0 15px #f00;
+  }
+
+  #hud {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    color: #aaa;
+    text-shadow: 1px 1px 2px #000;
+  }
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border-left: 3px solid #666;
+  }
+
+  .hud-item.objective {
+    border-left-color: #c84;
+  }
+
+  .hud-item.relics {
+    border-left-color: #4af;
+  }
+
+  .battery-bar-container {
+    width: 100px;
+    height: 10px;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #battery-level {
+    width: 100%;
+    height: 100%;
+    background: #2e7;
+    transition: width 0.3s linear, background-color 0.3s ease;
+  }
+
+  #notification {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff3333;
+    font-size: 1.15rem;
+    letter-spacing: 2px;
+    z-index: 6;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    text-shadow: 0 0 8px #000;
+  }
+
+  /* Interact prompt when near a collectible */
+  #interact-prompt {
+    position: absolute;
+    bottom: 22%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #555;
+    color: #ddd;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    z-index: 7;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  #interact-prompt.visible {
+    opacity: 1;
+  }
+
+  #interact-prompt kbd {
+    display: inline-block;
+    background: #333;
+    border: 1px solid #777;
+    border-radius: 3px;
+    padding: 1px 7px;
+    margin-right: 6px;
+    color: #fff;
+    font-family: inherit;
+  }
+
+  #win-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 8, 4, 0.92);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    text-align: center;
+  }
+
+
+  /* ===== Cinematic extraction victory screen ===== */
+  #win-screen {
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse at 50% 42%, rgba(0, 110, 83, .22), transparent 48%),
+      radial-gradient(ellipse at 50% 100%, rgba(0, 38, 34, .52), transparent 58%),
+      rgba(1, 7, 9, .97);
+    color: #e9fff8;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  #win-screen::before, #win-screen::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+  }
+  #win-screen::before {
+    z-index: -1; opacity: .2;
+    background-image: linear-gradient(rgba(83,255,204,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(83,255,204,.08) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse, black, transparent 75%);
+  }
+  #win-screen::after {
+    z-index: 4; opacity: .14;
+    background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(120,255,220,.16) 4px);
+    pointer-events: none;
+  }
+  .win-scanlines { position:absolute; inset:-100% 0 auto; height:60%; z-index:3; pointer-events:none;
+    background:linear-gradient(transparent,rgba(74,255,203,.07),transparent); animation:winScan 7s linear infinite; }
+  @keyframes winScan { to { transform:translateY(340%); } }
+  .win-card {
+    position:relative; z-index:2; width:min(650px, calc(100% - 34px)); padding:25px 42px 20px;
+    border:1px solid rgba(92,255,207,.35); border-radius:5px;
+    background:linear-gradient(145deg,rgba(5,23,23,.96),rgba(3,12,17,.96) 58%,rgba(4,24,22,.96));
+    box-shadow:0 0 0 5px rgba(49,255,190,.025),0 0 55px rgba(0,255,170,.12),inset 0 0 35px rgba(0,255,170,.035);
+    animation:winCardIn .9s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes winCardIn { from { opacity:0; transform:translateY(24px) scale(.97); } to { opacity:1; transform:none; } }
+  .win-topline { display:flex; justify-content:space-between; gap:12px; padding-bottom:13px; border-bottom:1px solid rgba(119,255,220,.18);
+    color:#6c9f98; font-size:.65rem; letter-spacing:2px; }
+  .win-dot { display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:#52ffc1; box-shadow:0 0 10px #52ffc1; }
+  .win-emblem { width:78px; height:78px; margin:24px auto 12px; padding:7px; border:1px solid rgba(85,255,198,.6); border-radius:50%;
+    box-shadow:0 0 24px rgba(35,255,177,.18),inset 0 0 18px rgba(35,255,177,.1); animation:winPulse 2.8s ease-in-out infinite; }
+  .win-emblem-inner { display:grid; place-items:center; width:100%; height:100%; border:1px dashed rgba(85,255,198,.5); border-radius:50%; background:rgba(20,105,78,.2); }
+  .win-emblem-inner span { color:#66ffc5; font-size:2.5rem; text-shadow:0 0 16px #16d99a; }
+  @keyframes winPulse { 50% { box-shadow:0 0 38px rgba(35,255,177,.32),inset 0 0 24px rgba(35,255,177,.16); } }
+  .win-kicker { text-align:center; color:#70b9a5; font-size:.68rem; letter-spacing:4px; }
+  .win-kicker span { color:#4dffc0; padding:0 5px; }
+  #win-screen h2 { margin:12px 0 8px; color:#eafff6; text-align:center; font-size:clamp(1.8rem,5vw,3rem); line-height:1.05;
+    letter-spacing:5px; text-shadow:0 0 18px rgba(65,255,188,.38); }
+  .win-copy { max-width:440px; margin:12px auto 23px; color:#9bbab2; font-size:.88rem; line-height:1.7; text-align:center; }
+  .win-divider { display:flex; align-items:center; gap:14px; color:#5c9689; font-size:.62rem; letter-spacing:3px; }
+  .win-divider::before,.win-divider::after { content:""; height:1px; flex:1; background:rgba(107,255,208,.2); }
+  .win-stats { display:grid; grid-template-columns:repeat(3,1fr); margin:17px 0; border:1px solid rgba(107,255,208,.17); background:rgba(0,0,0,.2); }
+  .win-stats > div { display:flex; flex-direction:column; align-items:center; gap:7px; padding:17px 8px 14px; }
+  .win-stats > div + div { border-left:1px solid rgba(107,255,208,.17); }
+  .win-stats strong { color:#e8fff6; font-size:1.65rem; letter-spacing:1px; }
+  .win-stats strong small { color:#73b9a5; font-size:.8rem; }
+  .win-stats span { color:#67958a; font-size:.58rem; letter-spacing:2px; }
+  .win-stats .win-green { color:#65ffc0; font-size:1.15rem; padding:5px 0; }
+  .win-confirm { display:flex; align-items:center; gap:9px; padding:11px 13px; border:1px solid rgba(75,255,184,.2);
+    background:rgba(18,112,76,.1); color:#9bdac4; font-size:.65rem; letter-spacing:1.5px; }
+  .win-check { display:grid; place-items:center; width:18px; height:18px; border-radius:50%; background:#1b9d70; color:#fff; font-size:.75rem; }
+  .win-live { margin-left:auto; color:#56ffc0; font-size:.58rem; }
+  .win-restart { display:block; width:100%; margin:19px 0 13px; padding:14px; border:1px solid #3edba6; border-radius:2px;
+    background:linear-gradient(90deg,#075d47,#087b59); color:#eafff7; letter-spacing:3px; box-shadow:0 0 20px rgba(0,255,170,.12); }
+  .win-restart:hover { background:linear-gradient(90deg,#087b5c,#0b9a6c); box-shadow:0 0 26px rgba(0,255,170,.28); }
+  .win-restart span { margin-right:8px; font-size:1.15rem; }
+  .win-footer { color:#466c65; text-align:center; font-size:.55rem; letter-spacing:3px; }
+  .win-footer span { color:#2da982; padding:0 5px; }
+  .win-particles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .win-particles i { position:absolute; bottom:-12px; left:var(--x,10%); width:3px; height:3px; border-radius:50%; background:#6affc6;
+    box-shadow:0 0 9px 2px rgba(75,255,190,.45); opacity:0; animation:winFloat var(--dur,8s) linear var(--delay,0s) infinite; }
+  .win-particles i:nth-child(1){--x:8%;--dur:8s;--delay:-2s}.win-particles i:nth-child(2){--x:17%;--dur:11s;--delay:-7s}
+  .win-particles i:nth-child(3){--x:27%;--dur:9s;--delay:-4s}.win-particles i:nth-child(4){--x:38%;--dur:12s;--delay:-9s}
+  .win-particles i:nth-child(5){--x:49%;--dur:8s;--delay:-5s}.win-particles i:nth-child(6){--x:61%;--dur:10s;--delay:-1s}
+  .win-particles i:nth-child(7){--x:72%;--dur:12s;--delay:-8s}.win-particles i:nth-child(8){--x:83%;--dur:9s;--delay:-3s}
+  .win-particles i:nth-child(9){--x:94%;--dur:11s;--delay:-6s}.win-particles i:nth-child(10){--x:33%;--dur:13s;--delay:-10s}
+  .win-particles i:nth-child(11){--x:68%;--dur:9s;--delay:-5s}.win-particles i:nth-child(12){--x:4%;--dur:12s;--delay:-8s}
+  @keyframes winFloat { 0% { transform:translateY(0) scale(.5); opacity:0; } 15% {opacity:.8;} 85% {opacity:.45;} 100% {transform:translateY(-110vh) scale(1.4);opacity:0;} }
+  @media(max-width:600px) {
+    .win-card { padding:18px 18px 15px; }
+    .win-topline { font-size:.53rem; letter-spacing:1px; }
+    .win-emblem { width:64px; height:64px; margin:17px auto 10px; }
+    #win-screen h2 { letter-spacing:2px; }
+    .win-copy { font-size:.78rem; margin-bottom:17px; }
+    .win-stats strong { font-size:1.35rem; }
+    .win-stats span { font-size:.48rem; letter-spacing:1px; }
+    .win-confirm { font-size:.55rem; letter-spacing:1px; }
+  }
+
+  /* Live collectible map */
+  #map-panel {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 210px;
+    padding: 10px;
+    z-index: 8;
+    color: #e8f5ff;
+    background: rgba(5, 12, 20, 0.86);
+    border: 1px solid rgba(100, 190, 230, 0.65);
+    border-radius: 7px;
+    box-shadow: 0 0 18px rgba(30, 150, 210, 0.18);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  #map-panel strong { display: block; margin-bottom: 7px; color: #8fe8ff; }
+  #collectible-map { display: block; width: 100%; height: auto; background: #101b25; border: 1px solid #344b5b; border-radius: 3px; }
+  .map-legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 8px; color: #c5d4df; letter-spacing: 0; }
+  .map-legend span { white-space: nowrap; }
+  @media (max-width: 600px) { #map-panel { width: 154px; top: 10px; right: 10px; padding: 7px; } .map-legend { gap: 5px 8px; } }
+
+  #intro{position:absolute;inset:0;z-index:30;background:#030104;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px}
+  #intro p{color:#b9aeb0;font-size:1rem;margin:14px 0}
+  #flash{position:absolute;inset:0;z-index:15;pointer-events:none;opacity:0;background:#fff}
+  #flash.go{animation:fl .45s steps(2) 3}
+  @keyframes fl{0%{opacity:var(--o,.95);background:#fff}50%{opacity:calc(var(--o,.95)*.8);background:#a00}100%{opacity:0}}
+  #danger{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(170,0,0,.8) 100%)}
+  #hide-overlay{position:absolute;inset:0;z-index:4;display:none;pointer-events:none;background:repeating-linear-gradient(90deg,#000 0 40px,transparent 40px 48px)}
+  #over-screen{position:absolute;inset:0;background:rgba(15,0,0,.94);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:20;text-align:center}
+  #over-screen h2{color:#e22;font-size:2.2rem;letter-spacing:5px;text-shadow:0 0 14px #f00}
+  #intro .term{width:95%;max-width:820px;background:rgba(10,12,18,.92);border:2px solid #1e2230;padding:28px;text-align:left;box-shadow:0 0 40px #000,inset 0 0 20px rgba(0,240,255,.04)}
+  .term-h{display:flex;justify-content:space-between;align-items:center;border-bottom:2px dashed #1e2230;padding-bottom:12px;margin-bottom:20px}
+  .term-t{color:#0ff;font-size:1.4rem;letter-spacing:3px;font-weight:bold;text-shadow:0 0 8px rgba(0,240,255,.4)}
+  .tag{color:#ff3b3b;border:1px solid #ff3b3b;padding:3px 9px;font-size:.8rem;animation:pl 2s infinite}
+  @keyframes pl{50%{opacity:.5}}
+  #briefing{min-height:240px;line-height:1.7;font-size:1rem;white-space:pre-line;color:#cbd5e1}
+  .q{color:#ff3b3b;font-style:italic;font-weight:bold}
+  .cur{display:inline-block;width:9px;height:16px;background:#0ff;margin-left:3px;vertical-align:middle;animation:bk .8s infinite}
+  .term-f{display:flex;justify-content:space-between;align-items:center;margin-top:18px;color:#0ff;font-size:.9rem}
+  .term-f .btn-play{margin-top:0;background:transparent;border-color:#0ff;color:#0ff}
+  .term-f .btn-play:hover{background:#0ff;color:#050608;box-shadow:0 0 18px rgba(0,240,255,.5)}
+  #xfer,#gatechk{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);z-index:9;display:none;width:270px;padding:12px;background:rgba(1,4,9,.93);border:2px solid #30363d;color:#0ff;font-size:.75rem;text-align:center;box-shadow:0 0 18px rgba(0,240,255,.2);pointer-events:none}
+  #xfer .xt,#gatechk .xt{border-bottom:1px dashed #30363d;padding-bottom:3px}
+  #g-msg{margin:6px 0;animation:pl 1.5s infinite}
+  #g-bar{height:100%;width:0;background:#0ff}
+  #x-msg{margin:6px 0;animation:pl 1.5s infinite}
+  #xfer .xpc,#gatechk .xpc{height:10px;background:#161b22;border:1px solid #30363d}
+  #x-bar{height:100%;width:0;background:#0ff}
+  #xfer .stk{width:12px;height:24px;background:#e6edf3;border:1px solid #6e7681;margin:10px auto 0;transition:transform .8s cubic-bezier(.4,0,.2,1);transform:translateY(-8px);position:relative}
+  #xfer .stk.in{transform:translateY(8px)}
+  #xfer .stk::after{content:'';position:absolute;width:4px;height:4px;background:#f33;border-radius:50%;bottom:3px;left:4px}
+  #xfer .stk.in::after{background:#0ff;animation:bk .4s infinite}
+  #xfer .xh,#gatechk .xh{margin-top:12px;color:#8b949e}
+  @keyframes bk{50%{opacity:0}}
+
+  /* ===== Studio splash + main menu ===== */
+  #studio-splash{position:absolute;inset:0;z-index:40;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;cursor:pointer;transition:opacity 1s ease}
+  #studio-splash.out{opacity:0;pointer-events:none}
+  #studio-splash .presents{color:#6b6468;font-size:.8rem;letter-spacing:6px;margin-bottom:16px;opacity:0;animation:splashIn 1.4s ease .3s forwards}
+  #studio-splash .studio-name{color:#e8e2e4;font-size:2rem;letter-spacing:10px;font-weight:bold;text-transform:uppercase;opacity:0;animation:splashIn 1.6s ease .8s forwards;text-shadow:0 0 18px rgba(255,255,255,.25)}
+  #studio-splash .skip-hint{position:absolute;bottom:26px;color:#3d393b;font-size:.7rem;letter-spacing:3px}
+  @keyframes splashIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  #main-menu{position:absolute;inset:0;z-index:35;background:radial-gradient(ellipse at center,#12060a 0%,#030104 75%);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px}
+  #main-menu .menu-title{color:#e22;font-size:3rem;letter-spacing:8px;margin:0 0 6px;text-shadow:0 0 14px #f00,0 0 36px rgba(255,0,0,.35);animation:titleFlick 5s infinite}
+  #main-menu .menu-sub{color:#8a6a6e;letter-spacing:12px;font-size:1.05rem;margin:0 0 38px}
+  @keyframes titleFlick{0%,92%,96%,100%{opacity:1}94%{opacity:.55}98%{opacity:.8}}
+  .menu-panel{display:none;flex-direction:column;align-items:center}
+  .menu-panel.active{display:flex}
+  .menu-panel .btn-play{margin:7px 0;width:240px}
+  .btn-menu-quit{background:transparent!important;border-color:#533!important;color:#a88!important}
+  .btn-menu-quit:hover{background:#300!important;color:#fff!important}
+  .credits-box{border:2px solid #800;background:rgba(20,0,0,.6);padding:26px 40px;border-radius:8px;max-width:480px;box-shadow:0 0 25px rgba(255,0,0,.2)}
+  .credits-box h2{color:#e22;letter-spacing:5px;margin:0 0 18px;text-shadow:0 0 10px #f00}
+  .credits-box .role{color:#8a6a6e;font-size:.75rem;letter-spacing:3px;margin:16px 0 4px}
+  .credits-box .who{color:#e8e2e4;font-size:1.05rem;letter-spacing:2px;margin:0}
+  .menu-foot{position:absolute;bottom:18px;color:#4a4346;font-size:.7rem;letter-spacing:3px}
+  @media (max-width:600px){#main-menu .menu-title{font-size:1.8rem;letter-spacing:4px}#main-menu .menu-sub{letter-spacing:6px}#studio-splash .studio-name{font-size:1.3rem;letter-spacing:5px}}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js">
+    </script>
+  </head>
+  <body>
+    <div id="canvas-container">
+    </div>
+    <div id="vignette">
+    </div>
+    <div id="danger">
+    </div>
+    <div id="hide-overlay">
+    </div>
+    <div id="flash">
+    </div>
+    <div id="studio-splash">
+      <div class="presents">
+        A GAME BY
+      </div>
+      <div class="studio-name studio-name-text">
+      </div>
+      <div class="skip-hint">
+        CLICK TO SKIP
+      </div>
+    </div>
+    <div id="main-menu">
+      <div class="menu-panel active" id="menu-main">
+        <h1 class="menu-title">
+          SECTOR 2147
+        </h1>
+        <div class="menu-sub">
+          SILENT RUN
+        </div>
+        <button class="btn-play" id="menu-play-btn">
+          PLAY
+        </button>
+        <button class="btn-play" id="menu-credits-btn">
+          CREDITS
+        </button>
+        <button class="btn-play btn-menu-quit" id="menu-quit-btn">
+          QUIT
+        </button>
+      </div>
+      <div class="menu-panel" id="menu-credits">
+        <div class="credits-box">
+          <h2>
+            CREDITS
+          </h2>
+          <div class="role">
+            A GAME BY
+          </div>
+          <p class="who studio-name-text">
+          </p>
+          <div class="role">
+            GAME DEVELOPMENT &amp; FINE TUNING
+          </div>
+          <p class="who">
+            PRIYODARSHI GHOSH
+          </p>
+          <div class="role">
+            GAME TESTING &amp; FEEDBACK
+          </div>
+          <p class="who">
+            ANTARIP SASMAL
+          </p>
+        </div>
+        <button class="btn-play" id="credits-back-btn" style="margin-top:22px">
+          BACK
+        </button>
+      </div>
+      <div class="menu-panel" id="menu-quit">
+        <h1 class="menu-title" style="font-size:1.8rem">
+          CONNECTION TERMINATED
+        </h1>
+        <p style="color:#8a6a6e;margin:6px 0 28px">
+          The signal from Sector 2147 has gone silent.
+        </p>
+        <button class="btn-play" id="quit-back-btn">
+          RETURN
+        </button>
+      </div>
+      <div class="menu-foot">
+        ©
+        <span class="studio-name-text"></span>
+      </div>
+    </div>
+    <div id="intro">
+      <div class="term">
+        <div class="term-h">
+          <span class="term-t">          MAIN LOG // SECTOR 2147
+</span>
+          <span class="tag">          REVENUE DEPOT: SILENT
+</span>
+        </div>
+        <div id="briefing">
+        </div>
+        <div class="term-f">
+          <span>          RELICS TO RECOVER: 5
+</span>
+          <button class="btn-play" id="intro-btn">
+            SKIP LOG
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="over-screen">
+      <h2>
+        YOU WERE CAUGHT
+      </h2>
+      <p style="color:#c88;max-width:420px;margin:12px 0 24px;">
+        The Eyeless Warden found your light. Sector 2147 keeps another soul.
+      </p>
+      <button class="btn-play" id="over-btn">
+        TRY AGAIN
+      </button>
+    </div>
+    <div id="crosshair">
+    </div>
+    <div id="notification">
+      FLASHLIGHT TOGGLED
+    </div>
+    <div id="interact-prompt">
+      <kbd>      E
+</kbd>
+      Pick up
+    </div>
+    <div id="xfer">
+      <div class="xt" id="x-title">
+        RELIC_CORE_01.dat
+      </div>
+      <div id="x-msg">
+        HARDWARE DETECTED
+      </div>
+      <div class="xpc">
+        <div id="x-bar">
+        </div>
+      </div>
+      <div class="stk" id="x-stick">
+      </div>
+      <div class="xh">
+        Hold still. Press E to abort.
+      </div>
+    </div>
+    <div id="gatechk">
+      <div class="xt">
+        EXTRACTION GATE TERMINAL
+      </div>
+      <div id="g-msg">
+        DRIVE DETECTED
+      </div>
+      <div class="xpc">
+        <div id="g-bar">
+        </div>
+      </div>
+      <div class="xh">
+        Do not move. Verifying all 5 relics...
+      </div>
+    </div>
+    <div id="hud">
+      <div class="hud-item" id="battery-hud">
+        <span>        FLASHLIGHT [F / RMB]
+</span>
+        <div class="battery-bar-container">
+          <div id="battery-level">
+          </div>
+        </div>
+      </div>
+      <div class="hud-item relics">
+        <span id="relic-hud">        RELICS: 0 / 5
+</span>
+      </div>
+      <div class="hud-item objective">
+        <span id="objective-hud">        OBJECTIVE: COLLECT 5 DATA RELICS
+</span>
+      </div>
+      <div class="hud-item" id="threat-item" style="border-left-color:#666">
+        <span id="threat-hud">        WARDEN: PATROLLING
+</span>
+      </div>
+    </div>
+    <div id="map-panel">
+      <strong>      SECTOR MAP
+</strong>
+      <canvas id="collectible-map" width="240" height="240" aria-label="Live map showing your position and remaining collectibles">
+      </canvas>
+      <div class="map-legend">
+        <span>        ● You
+</span>
+        <span style="color:#55ddff">        ◆ Relic
+</span>
+        <span style="color:#65ff78">        ■ Battery
+</span>
+        <span style="color:#ffcc66">        ★ Exit
+</span>
+        <span style="color:#ffaa55">        ▮ Locker
+</span>
+        <span style="color:#ff4444">        ● Warden
+</span>
+        <span style="color:#ff66aa">        ⚠ Chamber
+</span>
+      </div>
+    </div>
+    <div id="instructions">
+      <div class="title-box">
+        <h1>
+          SECTOR 2147: SILENT RUN
+        </h1>
+        <p>
+          Recover the lost data relics from the dark labyrinth, then reach the extraction gate.
+        </p>
+        <hr style="border: 0; border-top: 1px solid #400; margin: 15px 0;" />
+        <p style="text-align: left; font-size: 0.85rem;">
+          <strong>          TASKS:
+</strong>
+          <br />
+          • Collect
+          <strong>          5 Data Relics
+</strong>
+          : press
+          <strong>          E
+</strong>
+          at a cyan terminal, then hold still while the drive syncs
+          <br />
+          • Pick up
+          <strong>          batteries
+</strong>
+          to keep your flashlight alive
+          <br />
+          • Reach the
+          <strong>          extraction gate
+</strong>
+          , insert your drive in its terminal and let it verify all relics. The door then opens
+          <br />
+          •
+          <strong>          Avoid the Warden
+</strong>
+          : it sees your light and hears sprinting. Hide in a
+          <strong>          locker
+</strong>
+          if it chases you
+          <br />
+          • Explore the
+          <strong>          Containment Chamber
+</strong>
+          (⚠ on map) where the Warden was created
+          <br />
+          <br />
+          <strong>          CONTROLS:
+</strong>
+          <br />
+          •
+          <strong>          WASD
+</strong>
+          - Move
+          <br />
+          •
+          <strong>          MOUSE
+</strong>
+          - Look Around
+          <br />
+          •
+          <strong>          E
+</strong>
+          - Pick up / Hide in locker / Interact
+          <br />
+          •
+          <strong>          F
+</strong>
+          or
+          <strong>          RIGHT CLICK
+</strong>
+          - Flashlight On/Off
+          <br />
+          •
+          <strong>          SHIFT
+</strong>
+          - Sprint
+        </p>
+        <button class="btn-play" id="start-btn">
+          ENTER THE DARK
+        </button>
+      </div>
+    </div>
+    <div id="win-screen">
+      <div class="win-scanlines">
+      </div>
+      <div class="win-particles" aria-hidden="true">
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+      </div>
+      <section class="win-card">
+        <div class="win-topline">
+          <span>          <b class="win-dot"></b>
+          EXTRACTION NETWORK
+</span>
+          <span>          SECTOR 2147 // 02:47:19
+</span>
+        </div>
+        <div class="win-emblem">
+          <div class="win-emblem-inner">
+            <span>            ✓
+</span>
+          </div>
+        </div>
+        <div class="win-kicker">
+          MISSION STATUS
+          <span>          •
+</span>
+          VERIFIED
+        </div>
+        <h2>
+          YOU MADE IT OUT.
+        </h2>
+        <p class="win-copy">
+          The gate is sealed. The signal is clear. Whatever was hunting you is still down there.
+        </p>
+        <div class="win-divider">
+          <span>          RECOVERY REPORT
+</span>
+        </div>
+        <div class="win-stats">
+          <div>
+            <strong>            05
+            <small>            / 05
+</small>
+</strong>
+            <span>            DATA RELICS
+</span>
+          </div>
+          <div>
+            <strong>            100
+            <small>            %
+</small>
+</strong>
+            <span>            DRIVE INTEGRITY
+</span>
+          </div>
+          <div>
+            <strong class="win-green">            CLEAR
+</strong>
+            <span>            EXTRACTION
+</span>
+          </div>
+        </div>
+        <div class="win-confirm">
+          <span class="win-check">          ✓
+</span>
+          <span>          ALL OBJECTIVES COMPLETE
+</span>
+          <span class="win-live">          TRANSMITTED
+</span>
+        </div>
+        <button class="btn-play win-restart" id="restart-btn">
+          <span>          ↻
+</span>
+          RUN AGAIN
+        </button>
+        <div class="win-footer">
+          BAUXITE STUDIOS
+          <span>          —
+</span>
+          END OF TRANSMISSION
+        </div>
+      </section>
+    </div>
+    <script>
+      // --- Global Game Variables ---
+let scene, camera, renderer, controls;
+let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
+let walls = [];
+let batteries = [];
+let relics = [];
+let exitGate = null;
+let exitActive = false;
+let gameWon = false;
+let containmentDoor = null;
+let doorOpen = false;
+let doorClosedX = 0;
+let doorFramePos = null;
+let doorCollisionBox = null;
+let containmentSafeActive = false;
+// Short safety window after leaving the chamber so the player can clear the doorway.
+let containmentExitGrace = 0;
+let xfer = null;
+let fallbackLookActive = false;
+const fallbackCursor = { x: 0, y: 0 };
+// Cursor-follow without pointer lock: the cursor stops at the window edge, so keep turning while it rests near one
+function fallbackEdgeLook(dt) {
+  if (!fallbackLookActive || controls.isLocked || over || gameWon || hiding || gateSeq) return;
+  const w = window.innerWidth, h = window.innerHeight;
+  const ex = (fallbackCursor.x - w / 2) / (w / 2), ey = (fallbackCursor.y - h / 2) / (h / 2);
+  camera.rotation.order = 'YXZ';
+  if (Math.abs(ex) > 0.85) camera.rotation.y -= Math.sign(ex) * ((Math.abs(ex) - 0.85) / 0.15) * 1.9 * dt;
+  if (Math.abs(ey) > 0.9) camera.rotation.x = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, camera.rotation.x - Math.sign(ey) * ((Math.abs(ey) - 0.9) / 0.1) * 1.2 * dt));
+}
+let playerHands = null;
+let handGestureTimer = 0;
+let handGestureType = 'interact';
+const _gTmp = new THREE.Vector3(), _gTip = new THREE.Vector3(), _gEul = new THREE.Euler();
+function isGameLookActive() { return !!(controls && (controls.isLocked || fallbackLookActive)); }
+const _smokeCameraPos = new THREE.Vector3();
+const clock = new THREE.Clock();
+
+// Monster / hiding / game state
+const D4 = [[1,0],[-1,0],[0,1],[0,-1]];
+// The containment room (cells 6..10) is walled off physically; maze navigation must never route through it.
+const inRoomCell = (cx, cz) => cx >= 6 && cx <= 10 && cz >= 6 && cz <= 10;
+const wallCells = new Set();
+let openCells = [], lockers = [], hiding = null, over = false, scareT = -1, scareC = null, scareD = null, savedTorch = true;
+const M = { g: null, light: null, head: null, arms: [], state: 'PATROL', path: [], timer: 0, lookT: 0, repath: 0, lost: 0, stepT: 0, sees: false, moving: false, jumping: false, jumpTime: 0, jumpY: 0, jumpCooldown: 2.8 };
+
+// Collectible / task tracking
+const RELIC_TARGET = 5;
+let relicsCollected = 0;
+
+// Nearby interactable (for E key)
+let nearbyItem = null; // { type: 'battery'|'relic'|'exit', mesh, index }
+
+// Torch / Flashlight vars
+let torchLight, torchTarget, ambientLight, hemiLight;
+let torchOn = true;
+let batteryPower = 100.0;
+let flashlightSwayTime = 0;
+let notifyTimer = null;
+
+// Camera bobbing
+let defaultCamY = 1.8;
+// Player start: the open pad directly in front of the containment room's sliding door (door at x=32, z≈41), facing it (-z).
+const SPAWN = { x: 32, z: 44, cx: 8, cz: 11 };
+let walkCycle = 0;
+
+// Web Audio
+let audioCtx = null;
+let isAudioInitialized = false;
+let lastStepTime = 0;
+let stepInterval = 0.55;
+
+window.onload = function() {
+  initScene();
+  initListeners();
+  animate();
+};
+
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x101925);
+  scene.fog = new THREE.FogExp2(0x101925, 0.025);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  // Soft default lighting so the maze is faintly visible
+  ambientLight = new THREE.AmbientLight(0x8497b5, 1.15);
+  scene.add(ambientLight);
+
+  hemiLight = new THREE.HemisphereLight(0x91b5d8, 0x343746, 0.85);
+  scene.add(hemiLight);
+
+  const moonLight = new THREE.DirectionalLight(0x91a9cf, 0.65);
+  moonLight.position.set(20, 40, -15);
+  scene.add(moonLight);
+
+  // Flashlight
+  torchLight = new THREE.SpotLight(0xfffaed, 4.5, 28, Math.PI / 6, 0.45, 1.5);
+  torchLight.castShadow = true;
+  torchLight.shadow.mapSize.width = 1024;
+  torchLight.shadow.mapSize.height = 1024;
+  torchLight.shadow.camera.near = 0.2;
+  torchLight.shadow.camera.far = 30;
+
+  torchTarget = new THREE.Object3D();
+  scene.add(torchTarget);
+  torchLight.target = torchTarget;
+
+  camera.add(torchLight);
+  torchLight.position.set(0.44, -0.56, -1.16);
+
+  controls = new THREE.PointerLockControls(camera, document.body);
+  scene.add(controls.getObject());
+  controls.getObject().position.set(SPAWN.x, defaultCamY, SPAWN.z);
+  createPlayerHands();
+  attachFlashDrive();
+
+  createFloor();
+  createCeiling();
+  generateMaze();
+  createContainmentRoom();
+  buildNav();
+  spawnBloodPuddles();
+  spawnBatteryPickups();
+  spawnRelics();
+  createExitGate();
+  spawnSmokeSources();
+  spawnLockers();
+  spawnFactoryMachinery();
+  buildMonster();
+  updateHUD();
+}
+
+function triggerHandGesture(type, duration) {
+  handGestureType = type;
+  handGestureTimer = duration || 0.5;
+}
+
+function createHandBone(parent, start, end, topRadius, bottomRadius, material) {
+  const a = new THREE.Vector3(start[0], start[1], start[2]);
+  const b = new THREE.Vector3(end[0], end[1], end[2]);
+  const direction = b.clone().sub(a);
+  const length = direction.length();
+  const bone = new THREE.Mesh(
+    new THREE.CylinderGeometry(topRadius, bottomRadius, length, 12), material
+  );
+  bone.position.copy(a).add(b).multiplyScalar(0.5);
+  bone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  bone.castShadow = false;
+  bone.receiveShadow = false;
+  parent.add(bone);
+  return bone;
+}
+
+function createAxialTorchPart(parent, geometry, material, axis, position) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(position);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  parent.add(mesh);
+  return mesh;
+}
+
+function createPlayerFlashlight(parent) {
+  const torch = new THREE.Group();
+  torch.name = 'heldFlashlight';
+  // The handle sits through the closed right fist; the lens points straight ahead.
+  torch.position.set(-0.040, 0.134, 0.013);
+  torch.scale.setScalar(0.88);
+  const axis = new THREE.Vector3(0.015, 0.015, -1).normalize();
+  torch.userData.lens = axis.clone().multiplyScalar(0.2);
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x202a32, roughness: 0.42, metalness: 0.72 });
+  const gripMat = new THREE.MeshStandardMaterial({ color: 0x11171c, roughness: 0.82, metalness: 0.12 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x737e86, roughness: 0.34, metalness: 0.86 });
+  const lensMat = new THREE.MeshStandardMaterial({
+    color: 0xffedc6, roughness: 0.18, metalness: 0.12,
+    emissive: 0xffd98a, emissiveIntensity: 0.72
+  });
+
+  createAxialTorchPart(torch, new THREE.CylinderGeometry(0.031, 0.034, 0.30, 20), bodyMat, axis, new THREE.Vector3(0, 0, 0));
+  createAxialTorchPart(torch, new THREE.CylinderGeometry(0.046, 0.034, 0.075, 20), metalMat, axis, axis.clone().multiplyScalar(0.145));
+  createAxialTorchPart(torch, new THREE.CylinderGeometry(0.043, 0.043, 0.012, 24), gripMat, axis, axis.clone().multiplyScalar(0.185));
+  createAxialTorchPart(torch, new THREE.CylinderGeometry(0.037, 0.037, 0.008, 24), lensMat, axis, axis.clone().multiplyScalar(0.194));
+  createAxialTorchPart(torch, new THREE.CylinderGeometry(0.032, 0.032, 0.035, 20), gripMat, axis, axis.clone().multiplyScalar(-0.163));
+
+  const ringQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), axis);
+  [-0.075, -0.045, -0.015, 0.015, 0.045].forEach((along, i) => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.0035, 6, 18), i % 2 ? metalMat : gripMat);
+    ring.position.copy(axis).multiplyScalar(along);
+    ring.quaternion.copy(ringQuaternion);
+    torch.add(ring);
+  });
+  const switchButton = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), metalMat);
+  switchButton.position.set(0.031, 0.012, 0.018);
+  switchButton.scale.set(1, 0.55, 1);
+  torch.add(switchButton);
+
+  parent.add(torch);
+  return torch;
+}
+
+// ---------------------------------------------------------------------------
+// First-person hands
+// Hand space: +y = fingers, +z = back of the hand (towards the camera), -z = palm side.
+// The thumb sits on the "thumb side" (ts = -side), the index finger next to it, the pinky on the far edge.
+// ---------------------------------------------------------------------------
+const HAND_FINGER_X = [0.045, 0.015, -0.015, -0.045];   // index → pinky (multiplied by ts)
+const HAND_FINGER_Y = [0.058, 0.064, 0.060, 0.052];     // knuckle line arcs, middle finger sits highest
+const HAND_FINGER_LEN = [0.132, 0.148, 0.140, 0.118];
+const HAND_FINGER_R = [0.0118, 0.0126, 0.0120, 0.0104];
+// Curl per finger [knuckle, middle joint, tip joint]: a closed grip around the flashlight barrel and a thumb/index pinch for the flash drive.
+const HAND_TORCH_CURL = [[-1.45, -0.90, -0.80], [-1.45, -0.90, -0.80], [-1.36, -0.85, -0.70], [-1.15, -0.70, -0.50]];
+const HAND_PINCH_CURL = [[-1.00, -0.90, -0.50], [-1.25, -1.25, -0.80], [-1.25, -1.25, -0.80], [-1.25, -1.25, -0.80]];
+
+// Palm: a tapered, slightly domed pad (narrow at the wrist, wide at the knuckles) instead of a plain ball.
+function createPalmGeometry() {
+  const g = new THREE.SphereGeometry(1, 28, 20);
+  const pos = g.attributes.position, nor = g.attributes.normal;
+  const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+  const n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    const ux = pos.getX(i), uy = pos.getY(i), uz = pos.getZ(i);
+    const x = sq(ux, 0.8), y = sq(uy, 0.86);
+    const t = (y + 1) / 2;                                    // 0 = wrist, 1 = knuckles
+    const halfW = 0.047 + 0.021 * Math.pow(t, 0.8);
+    const thick = 0.024 + 0.006 * (1 - t);
+    const dome = uz > 0 ? 1 - 0.22 * x * x : 1;               // the back of the hand is gently arched
+    pos.setXYZ(i, x * halfW, y * 0.088, uz * thick * dome);
+    n.set(ux / halfW, uy / 0.088, uz / thick).normalize();
+    nor.setXYZ(i, n.x, n.y, n.z);
+  }
+  pos.needsUpdate = true;
+  nor.needsUpdate = true;
+  return g;
+}
+
+// A thin wrinkle line across the back of a joint.
+function createCreaseRing(parent, y, radius, material) {
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.0017, 5, 12, Math.PI), material);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = y;
+  parent.add(ring);
+}
+
+function createFinger(palm, fi, ts, mats, unit) {
+  const finger = new THREE.Group();
+  finger.position.set(ts * HAND_FINGER_X[fi], HAND_FINGER_Y[fi], 0.009);
+  palm.add(finger);
+  const total = HAND_FINGER_LEN[fi], r = HAND_FINGER_R[fi];
+  const lengths = [total * 0.42, total * 0.32, total * 0.26];
+  const joints = [];
+
+  const knuckle = new THREE.Mesh(unit, mats.skinLight);      // knuckle bump on the back of the hand
+  knuckle.scale.set(r * 1.18, r * 0.95, r * 0.80);
+  knuckle.position.set(0, 0.002, r * 0.55);
+  finger.add(knuckle);
+
+  let parent = finger;
+  lengths.forEach((len, si) => {
+    const rb = r * (1 - si * 0.10), rt = r * (1 - (si + 1) * 0.10);
+    createHandBone(parent, [0, 0, 0], [0, len, 0], rt, rb, si === 1 ? mats.skin : mats.skinLight);
+    if (si < 2) {
+      const ball = new THREE.Mesh(unit, mats.skin);
+      ball.scale.set(rt * 1.05, rt * 0.95, rt * 0.95);
+      ball.position.set(0, len, 0);
+      parent.add(ball);
+      createCreaseRing(parent, len * 0.97, rt * 1.0, mats.skinShade);
+      const next = new THREE.Group();
+      next.position.set(0, len, 0);
+      parent.add(next);
+      joints.push(next);
+      parent = next;
+    } else {
+      const pad = new THREE.Mesh(unit, mats.skin);           // rounded fingertip pad
+      pad.scale.set(rt, rt * 1.25, rt * 0.95);
+      pad.position.set(0, len, 0);
+      parent.add(pad);
+      const nail = new THREE.Mesh(unit, mats.nail);
+      nail.scale.set(rt * 0.62, len * 0.36, 0.0042);
+      nail.position.set(0, len * 0.62, rt * 0.95);
+      parent.add(nail);
+    }
+  });
+  finger.userData.flexJoints = joints;
+  finger.userData.fingerIndex = fi;
+  return finger;
+}
+
+// Three-part thumb rooted on the thumb side of the palm (the old one started on the pinky side and crossed the whole hand).
+function createThumb(palm, side, ts, mats, unit) {
+  const thumb = new THREE.Group();
+  thumb.position.set(ts * 0.050, -0.030, 0.004);
+  thumb.rotation.set(0.10, 0, -side * 0.28);
+  palm.add(thumb);
+  const segs = [[ts * 0.024, 0.046, -0.004], [ts * 0.006, 0.043, -0.010], [0, 0.034, -0.012]];
+  const radii = [0.0215, 0.0178, 0.0155, 0.0135];
+  let parent = thumb;
+  segs.forEach((s, i) => {
+    createHandBone(parent, [0, 0, 0], s, radii[i + 1], radii[i], i === 1 ? mats.skin : mats.skinLight);
+    if (i < 2) {
+      const ball = new THREE.Mesh(unit, mats.skin);
+      ball.scale.set(radii[i + 1] * 1.05, radii[i + 1], radii[i + 1]);
+      ball.position.set(s[0], s[1], s[2]);
+      parent.add(ball);
+      const next = new THREE.Group();
+      next.position.set(s[0], s[1], s[2]);
+      parent.add(next);
+      parent = next;
+    } else {
+      const tip = new THREE.Mesh(unit, mats.skinLight);
+      tip.scale.set(radii[3], radii[3] * 1.2, radii[3] * 0.95);
+      tip.position.set(s[0], s[1], s[2]);
+      parent.add(tip);
+      const nail = new THREE.Mesh(unit, mats.nail);
+      nail.scale.set(radii[3] * 0.68, 0.0125, 0.0045);
+      nail.position.set(s[0] * 0.7, s[1] * 0.7, s[2] * 0.7 + radii[3] * 0.95);
+      parent.add(nail);
+    }
+  });
+  return thumb;
+}
+
+function createPlayerHands() {
+  if (playerHands) return;
+  const rig = new THREE.Group();
+  rig.name = 'firstPersonHands';
+  rig.visible = false;
+  camera.add(rig);
+
+  // A soft camera-local fill keeps natural skin tones readable in dark areas.
+  const handFill = new THREE.PointLight(0xffd0b8, 0.62, 2.4, 2);
+  handFill.position.set(0, -0.34, -0.45);
+  rig.add(handFill);
+
+  const skin = new THREE.MeshStandardMaterial({ color: 0xc9957d, roughness: 0.72, metalness: 0.0 });
+  const skinLight = new THREE.MeshStandardMaterial({ color: 0xd6a38b, roughness: 0.68, metalness: 0.0 });
+  const skinShade = new THREE.MeshStandardMaterial({ color: 0xa97462, roughness: 0.80, metalness: 0.0 });
+  const nailMat = new THREE.MeshStandardMaterial({ color: 0xe3c3b6, roughness: 0.32, metalness: 0.05 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x252e36, roughness: 0.92 });
+  const cuffMat = new THREE.MeshStandardMaterial({ color: 0x45515c, roughness: 0.74, metalness: 0.10 });
+  const seamMat = new THREE.MeshStandardMaterial({ color: 0x73808a, roughness: 0.78 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, roughness: 0.55, metalness: 0.05, emissive: 0x2a1204, emissiveIntensity: 0.5 });
+  const mats = { skin, skinLight, skinShade, nail: nailMat };
+  const palmGeo = createPalmGeometry();
+  const unit = new THREE.SphereGeometry(1, 12, 9);
+  const hands = [];
+
+  [-1, 1].forEach((side, index) => {
+    const isTorchHand = side === 1;
+    const ts = -side;                                   // thumb side along hand-space x
+    const root = new THREE.Group();
+    const baseX = side * 0.455;
+    root.position.set(baseX, -0.715, -0.94);
+    root.rotation.set(0.035, side * -0.055, side * -0.075);
+    rig.add(root);
+
+    // Work-jacket sleeve: tapered, with a ribbed knit cuff, a rolled lip and a hi-vis stripe.
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.073, 0.087, 0.47, 18), sleeveMat);
+    sleeve.position.set(0, -0.315, -0.006);
+    sleeve.rotation.z = side * -0.045;
+    root.add(sleeve);
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.077, 0.077, 0.075, 18), cuffMat);
+    cuff.position.set(0, -0.075, 0.002);
+    cuff.rotation.z = side * -0.045;
+    root.add(cuff);
+    const cuffSeam = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.0045, 6, 20), seamMat);
+    cuffSeam.position.set(0, -0.112, 0.002);
+    cuffSeam.rotation.x = Math.PI / 2;
+    root.add(cuffSeam);
+    const cuffLip = new THREE.Mesh(new THREE.TorusGeometry(0.073, 0.0085, 8, 22), cuffMat);
+    cuffLip.position.set(0, -0.038, 0.002);
+    cuffLip.rotation.x = Math.PI / 2;
+    root.add(cuffLip);
+    const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.0795, 0.0075, 6, 22), stripeMat);
+    stripe.position.set(0, -0.235, -0.006);
+    stripe.rotation.x = Math.PI / 2;
+    root.add(stripe);
+
+    // Visible wrist so the hand joins the sleeve instead of floating above it.
+    const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.040, 0.10, 16), skin);
+    wrist.position.set(0, -0.012, 0.004);
+    wrist.scale.z = 0.86;
+    root.add(wrist);
+
+    const palm = new THREE.Group();
+    palm.position.set(0, 0.105, 0.012);
+    // The flashlight hand turns 90° so its fist wraps around a barrel that points straight ahead.
+    if (isTorchHand) palm.rotation.y = Math.PI / 2;
+    root.add(palm);
+    palm.add(new THREE.Mesh(palmGeo, skin));
+
+    const thenar = new THREE.Mesh(unit, skin);          // fleshy base of the thumb
+    thenar.scale.set(0.026, 0.046, 0.022);
+    thenar.position.set(ts * 0.040, -0.022, -0.004);
+    palm.add(thenar);
+    const hypothenar = new THREE.Mesh(unit, skinShade);  // pad along the pinky edge
+    hypothenar.scale.set(0.018, 0.040, 0.020);
+    hypothenar.position.set(-ts * 0.047, -0.018, -0.002);
+    palm.add(hypothenar);
+
+    const fingerGroups = [];
+    for (let fi = 0; fi < 4; fi++) fingerGroups.push(createFinger(palm, fi, ts, mats, unit));
+    for (let fi = 0; fi < 3; fi++) {                     // skin webbing between the fingers
+      const web = new THREE.Mesh(unit, skin);
+      web.scale.set(0.0125, 0.017, 0.010);
+      web.position.set(ts * (HAND_FINGER_X[fi] + HAND_FINGER_X[fi + 1]) / 2,
+        (HAND_FINGER_Y[fi] + HAND_FINGER_Y[fi + 1]) / 2 + 0.002, 0.003);
+      palm.add(web);
+    }
+    const thumb = createThumb(palm, side, ts, mats, unit);
+
+    let torch = null;
+    if (isTorchHand) torch = createPlayerFlashlight(root);
+    hands.push({
+      root, palm, fingers: fingerGroups, thumb, side, ts, baseX, baseY: -0.715,
+      phase: index * Math.PI, isTorchHand, torch,
+      // Flash drive pinched between thumb and index tip (hand space) and where its connector tip ends up (wrist space).
+      drivePos: [ts * 0.052, 0.050, -0.099],
+      driveTip: new THREE.Vector3(ts * 0.052, 0.105 + 0.050 + 0.067, 0.012 - 0.099)
+    });
+  });
+
+  // The beam now leaves from the lens of the flashlight the player is actually holding.
+  const torchHand = hands.find(h => h.isTorchHand);
+  if (torchHand && torchHand.torch && typeof torchLight !== 'undefined' && torchLight) {
+    torchHand.root.updateMatrix();
+    torchHand.torch.updateMatrix();
+    const lens = torchHand.torch.userData.lens.clone()
+      .applyMatrix4(torchHand.torch.matrix).applyMatrix4(torchHand.root.matrix);
+    torchLight.position.set(lens.x, lens.y, lens.z - 0.03);
+  }
+
+  playerHands = { rig, hands, time: 0 };
+}
+
+function attachFlashDrive() {
+  if (!playerHands) return;
+  const hand = playerHands.hands.find(h => !h.isTorchHand);
+  if (!hand) return;
+  const g = new THREE.Group();
+  const bodyM = new THREE.MeshStandardMaterial({ color: 0x1b4fa8, roughness: 0.4, metalness: 0.3, emissive: 0x061428 });
+  const metalM = new THREE.MeshStandardMaterial({ color: 0xb8c0c8, roughness: 0.25, metalness: 0.9 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.07, 0.012), bodyM); g.add(body);
+  const tip = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.032, 0.006), metalM); tip.position.y = 0.051; g.add(tip);
+  const led = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.006, 0.004), new THREE.MeshBasicMaterial({ color: 0x44ff88 })); led.position.set(0, -0.02, 0.008); g.add(led);
+  g.position.set(hand.drivePos[0], hand.drivePos[1], hand.drivePos[2]);   // pinched between thumb and index fingertip, connector pointing the way the hand points
+  g.visible = false;
+  hand.palm.add(g);
+  hand.drive = g;
+}
+
+function updatePlayerHands(dt) {
+  if (!playerHands || !controls) return;
+  const visible = isGameLookActive() && !hiding && !over && !gameWon;
+  playerHands.rig.visible = visible;
+  if (!visible) return;
+
+  const h = playerHands;
+  h.time += dt;
+  handGestureTimer = Math.max(0, handGestureTimer - dt);
+  const moving = !hiding && !xfer && !gateSeq && (moveForward || moveBackward || moveLeft || moveRight);
+  const sprinting = moving && isSprinting;
+  const speed = sprinting ? 12.5 : 8.5;
+
+  h.hands.forEach((hand) => {
+    const ts = hand.ts;
+    const phase = h.time * speed + hand.phase;
+    const wave = Math.sin(phase);
+    const walkAmp = moving ? (sprinting ? 0.105 : 0.055) : 0;
+    const reachBlend = handGestureTimer > 0 && !hand.isTorchHand && handGestureType === 'interact'
+      ? Math.sin((1 - handGestureTimer / 0.62) * Math.PI) : 0;
+    const reach = Math.max(0, reachBlend);
+
+    hand.root.position.x = hand.baseX + (moving ? Math.sin(phase) * (sprinting ? 0.018 : 0.010) : 0);
+    hand.root.position.y = hand.baseY + Math.sin(h.time * 1.7 + hand.phase) * 0.008 +
+      (moving ? Math.abs(wave) * (sprinting ? 0.026 : 0.014) : 0);
+    hand.root.position.z = -0.94 - (sprinting ? 0.025 : 0) - reach * 0.16;
+    hand.root.rotation.x = 0.025 + (moving ? wave * walkAmp : Math.sin(h.time * 1.0 + hand.phase) * 0.012) - reach * 0.30;
+    hand.root.rotation.y = hand.side * -0.055 + (moving ? wave * (sprinting ? 0.07 : 0.04) : 0);
+    hand.root.rotation.z = hand.side * -0.075 + (moving ? wave * (sprinting ? 0.085 : 0.045) : Math.sin(h.time * 1.2 + hand.phase) * 0.009);
+    hand.palm.rotation.x = Math.sin(h.time * 1.3 + hand.phase) * 0.012 - reach * 0.10;
+
+    if (hand.isTorchHand) {
+      // Closed fist around the barrel, thumb laid along it; toggle gestures only add a small thumb/wrist press.
+      const togglePulse = handGestureTimer > 0 && handGestureType === 'torch'
+        ? Math.sin((1 - handGestureTimer / 0.48) * Math.PI) : 0;
+      hand.root.rotation.x += togglePulse * 0.045;
+      hand.thumb.rotation.x = -0.80 - togglePulse * 0.14;
+      hand.thumb.rotation.z = -hand.side * 1.40;
+      hand.fingers.forEach((finger, fi) => {
+        const c = HAND_TORCH_CURL[fi], joints = finger.userData.flexJoints;
+        finger.rotation.x = c[0];
+        joints[0].rotation.x = c[1];
+        joints[1].rotation.x = c[2];
+        finger.rotation.z = (fi - 1.5) * 0.012 * ts;
+      });
+    } else {
+      // The free hand hangs relaxed, with a natural progressive curl (pinky curls most) that loosens slightly when moving.
+      const curlBase = moving ? (sprinting ? 0.12 : 0.16) : 0.20;
+      hand.fingers.forEach((finger, fi) => {
+        const joints = finger.userData.flexJoints;
+        finger.rotation.x = -(curlBase + fi * 0.045) + reach * 0.22 + Math.sin(h.time * 1.8 + fi * 0.55) * 0.012;
+        joints[0].rotation.x = -(0.30 + fi * 0.06) + reach * 0.26;
+        joints[1].rotation.x = -(0.20 + fi * 0.05) + reach * 0.18;
+        finger.rotation.z = (fi - 1.5) * 0.034 * ts + (moving ? Math.sin(phase + fi * 0.35) * 0.012 : 0);
+      });
+      hand.thumb.rotation.x = -(0.10 + curlBase * 0.4) + reach * 0.15;
+      hand.thumb.rotation.z = -hand.side * (0.30 - reach * 0.10);
+    }
+
+    // Gate terminal: the free hand pinches the flash drive, carries it up to the USB port and plugs it in
+    if (gateSeq && !hand.isTorchHand && exitGate) {
+      const s = gateSeq, U = exitGate.userData;
+      const ease = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+      const amt = ease(s.t / 0.42) * (1 - ease((s.t - 0.95) / 0.5));
+      camera.updateMatrixWorld(true);
+      _gTmp.copy(U.portWorld); camera.worldToLocal(_gTmp);
+      const a = -1.25;
+      _gTip.copy(hand.driveTip).applyEuler(_gEul.set(a, 0, 0));        // drive connector tip position in wrist space
+      hand.root.position.x += (_gTmp.x - _gTip.x - hand.root.position.x) * amt;
+      hand.root.position.y += (_gTmp.y - _gTip.y - hand.root.position.y) * amt;
+      hand.root.position.z += (_gTmp.z - _gTip.z - hand.root.position.z) * amt;
+      hand.root.rotation.x += (a - hand.root.rotation.x) * amt;
+      hand.root.rotation.y += (0 - hand.root.rotation.y) * amt;
+      hand.root.rotation.z += (0 - hand.root.rotation.z) * amt;
+      hand.fingers.forEach((finger, fi) => {                           // blend into the thumb/index pinch
+        const c = HAND_PINCH_CURL[fi], joints = finger.userData.flexJoints;
+        finger.rotation.x += (c[0] - finger.rotation.x) * amt;
+        joints[0].rotation.x += (c[1] - joints[0].rotation.x) * amt;
+        joints[1].rotation.x += (c[2] - joints[1].rotation.x) * amt;
+      });
+      hand.thumb.rotation.x += (-0.70 - hand.thumb.rotation.x) * amt;
+      hand.thumb.rotation.z += (-hand.side * 0.20 - hand.thumb.rotation.z) * amt;
+      if (hand.drive) hand.drive.visible = s.t < 0.5;
+    } else if (hand.drive) hand.drive.visible = false;
+  });
+}
+
+function createDarkTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#111113';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 3000; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const val = Math.floor(Math.random() * 30);
+    ctx.fillStyle = `rgb(${val}, ${val}, ${val})`;
+    ctx.fillRect(x, y, 2, 2);
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createConcreteTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#2a2a2e';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 800; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256;
+    const v = 30 + Math.floor(Math.random() * 40);
+    ctx.fillStyle = `rgb(${v},${v},${v+5})`;
+    ctx.fillRect(x, y, 3 + Math.random()*4, 3 + Math.random()*4);
+  }
+  // Cracks
+  ctx.strokeStyle = '#1a1a1c';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.moveTo(Math.random()*256, Math.random()*256);
+    ctx.lineTo(Math.random()*256, Math.random()*256);
+    ctx.stroke();
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createMetalPanelTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#3a4550';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = '#2a3540';
+  ctx.lineWidth = 4;
+  for (let y = 0; y < 256; y += 64) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+  }
+  ctx.strokeStyle = '#5a6570';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < 256; x += 32) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke();
+  }
+  // Rivets
+  ctx.fillStyle = '#6a7580';
+  for (let x = 16; x < 256; x += 64) {
+    for (let y = 16; y < 256; y += 64) {
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createRustedTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#4a3a2a';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 600; i++) {
+    const x = Math.random()*256, y = Math.random()*256;
+    const r = 40 + Math.random()*40, g = 20 + Math.random()*20, b = 10;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.beginPath();
+    ctx.arc(x, y, 4 + Math.random()*8, 0, Math.PI*2);
+    ctx.fill();
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createDustTexture(seed) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const x = c.getContext('2d');
+  const img = x.createImageData(256, 256);
+  for (let py = 0; py < 256; py++) {
+    const v = 1 - py / 256;                       // v = 1 at the top of a face: dust settles heavier up there
+    for (let px = 0; px < 256; px++) {
+      const n = Math.random();
+      const a = Math.max(0, Math.min(1, (n * 0.55 + 0.12 + v * 0.38 - 0.28))) * 0.62;
+      const i = (py * 256 + px) * 4;
+      const t = 150 + Math.random() * 40;
+      img.data[i] = t + 14; img.data[i + 1] = t + 6; img.data[i + 2] = t - 14; img.data[i + 3] = a * 255;
+    }
+  }
+  x.putImageData(img, 0, 0);
+  // soft blotches and wipe marks
+  for (let i = 0; i < 26; i++) {
+    const bx = Math.random() * 256, by = Math.random() * 256, r = 14 + Math.random() * 34;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    g.addColorStop(0, 'rgba(170,160,138,0.34)'); g.addColorStop(1, 'rgba(170,160,138,0)');
+    x.fillStyle = g; x.beginPath(); x.arc(bx, by, r, 0, Math.PI * 2); x.fill();
+  }
+  x.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 6; i++) {
+    x.strokeStyle = 'rgba(0,0,0,0.5)'; x.lineWidth = 3 + Math.random() * 5; x.lineCap = 'round';
+    const sx = Math.random() * 256, sy = Math.random() * 200;
+    x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + (Math.random() - 0.5) * 20, sy + 30 + Math.random() * 60); x.stroke();
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+function createFloor() {
+  const floorTex = createDarkTexture();
+  floorTex.wrapS = THREE.RepeatWrapping;
+  floorTex.wrapT = THREE.RepeatWrapping;
+  floorTex.repeat.set(40, 40);
+
+  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: floorTex,
+    roughness: 0.85,
+    metalness: 0.2
+  });
+
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+}
+
+function createCeiling() {
+  const ceilTex = createMetalPanelTexture();
+  ceilTex.wrapS = THREE.RepeatWrapping;
+  ceilTex.wrapT = THREE.RepeatWrapping;
+  ceilTex.repeat.set(30, 30);
+
+  const ceilMat = new THREE.MeshStandardMaterial({
+    map: ceilTex,
+    roughness: 0.7,
+    metalness: 0.5,
+    side: THREE.DoubleSide
+  });
+
+  const ceilGeo = new THREE.PlaneGeometry(200, 200);
+  const ceiling = new THREE.Mesh(ceilGeo, ceilMat);
+  ceiling.rotation.x = Math.PI / 2;
+  ceiling.position.y = 5.4;
+  ceiling.receiveShadow = true;
+  scene.add(ceiling);
+
+  // Add some ceiling light fixtures for atmosphere
+  const lightMat = new THREE.MeshBasicMaterial({ color: 0x334455 });
+  for (let i = 0; i < 12; i++) {
+    const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.4), lightMat);
+    const cx = (Math.random() - 0.5) * 80;
+    const cz = (Math.random() - 0.5) * 80;
+    fixture.position.set(cx, 5.32, cz);
+    scene.add(fixture);
+
+    const light = new THREE.PointLight(0x667788, 0.35, 12);
+    light.position.set(cx, 5.0, cz);
+    scene.add(light);
+  }
+}
+
+function createBloodTexture(variant) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 256, 256);
+  const blot = (x, y, r, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(125,10,10,${a})`); g.addColorStop(0.6, `rgba(80,5,5,${a * 0.7})`); g.addColorStop(1, 'rgba(40,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  };
+  if (variant === 0) {            // blotches with drips
+    for (let i = 0; i < 14; i++) blot(Math.random() * 256, Math.random() * 150 + 20, 12 + Math.random() * 32, 0.85);
+    for (let i = 0; i < 9; i++) {
+      const x = Math.random() * 256, y = Math.random() * 100 + 30;
+      ctx.strokeStyle = 'rgba(100,8,8,0.75)'; ctx.lineWidth = 2 + Math.random() * 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (Math.random() - 0.5) * 10, y + 40 + Math.random() * 90); ctx.stroke();
+    }
+  } else if (variant === 1) {     // long drag marks
+    for (let i = 0; i < 5; i++) {
+      const x = 40 + Math.random() * 176, y = 10 + Math.random() * 40;
+      ctx.strokeStyle = `rgba(${95 + Math.random() * 30},6,6,0.8)`; ctx.lineWidth = 6 + Math.random() * 12; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.bezierCurveTo(x + 20, y + 70, x - 25, y + 130, x + (Math.random() - 0.5) * 40, 230); ctx.stroke();
+    }
+    blot(128, 30, 40, 0.8);
+  } else if (variant === 2) {     // spray splatter
+    const cx = 128, cy = 110;
+    blot(cx, cy, 34, 0.9);
+    for (let i = 0; i < 70; i++) {
+      const a = Math.random() * Math.PI * 2, d = 30 + Math.random() * 95;
+      blot(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.9, 2 + Math.random() * 7, 0.9);
+    }
+  } else {                        // smeared hand prints
+    for (let k = 0; k < 3; k++) {
+      const px = 60 + Math.random() * 140, py = 70 + Math.random() * 110, rot = (Math.random() - 0.5) * 0.7;
+      ctx.save(); ctx.translate(px, py); ctx.rotate(rot); ctx.fillStyle = 'rgba(110,8,8,0.85)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 22, 28, 0, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(-18 + i * 12, -38 - (i === 1 || i === 2 ? 6 : 0), 5, 16, (i - 1.5) * 0.1, 0, Math.PI * 2); ctx.fill(); }
+      ctx.beginPath(); ctx.ellipse(-26, -6, 6, 15, -0.9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(100,8,8,0.6)'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(0, 25); ctx.lineTo(8, 85); ctx.stroke();
+      ctx.restore();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function generateMaze() {
+  const darkTex = createDarkTexture();
+  darkTex.wrapS = darkTex.wrapT = THREE.RepeatWrapping;
+  darkTex.repeat.set(1, 2);
+
+  const concreteTex = createConcreteTexture();
+  concreteTex.wrapS = concreteTex.wrapT = THREE.RepeatWrapping;
+  concreteTex.repeat.set(1, 2);
+
+  const metalTex = createMetalPanelTexture();
+  metalTex.wrapS = metalTex.wrapT = THREE.RepeatWrapping;
+  metalTex.repeat.set(1, 2);
+
+  const rustTex = createRustedTexture();
+  rustTex.wrapS = rustTex.wrapT = THREE.RepeatWrapping;
+  rustTex.repeat.set(1, 2);
+
+  const wallMats = [
+    new THREE.MeshStandardMaterial({ map: darkTex, roughness: 0.9, metalness: 0.1 }),
+    new THREE.MeshStandardMaterial({ map: concreteTex, roughness: 0.85, metalness: 0.05 }),
+    new THREE.MeshStandardMaterial({ map: metalTex, roughness: 0.6, metalness: 0.4 }),
+    new THREE.MeshStandardMaterial({ map: rustTex, roughness: 0.95, metalness: 0.2 })
+  ];
+
+  const wallGeo = new THREE.BoxGeometry(4, 5, 4);
+
+  const bloodMats = [0, 1, 2, 3].map(v => new THREE.MeshBasicMaterial({
+    map: createBloodTexture(v),
+    transparent: true,
+    opacity: 0.8,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  }));
+
+  const mazeSize = 24;
+  // Reserve a containment chamber room at the far corner
+  const roomMinX = 6, roomMaxX = 10, roomMinZ = 6, roomMaxZ = 10;
+  // Cells that never get a maze wall: the central plaza, the reserved room interior and the entrance pad
+  // in front of the containment door (the player spawns here; the outer boundary wall behind it stays intact).
+  const cellSkipped = (cx, cz) =>
+    (Math.abs(cx) <= 1 && Math.abs(cz) <= 1) ||
+    (cx >= roomMinX && cx <= roomMaxX && cz >= roomMinZ && cz <= roomMaxZ) ||
+    (cx >= 7 && cx <= 9 && cz === 11);
+  // Roll the wall layout first and keep the one in which the spawn pad reaches the most of the maze,
+  // so the start can never be sealed into a pocket.
+  let plan = null, bestReach = -1;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const cand = new Set();
+    let openCount = 0;
+    for (let cx = -12; cx <= 12; cx++) {
+      for (let cz = -12; cz <= 12; cz++) {
+        if (cellSkipped(cx, cz)) continue;
+        if (Math.abs(cx) === 12 || Math.abs(cz) === 12 || Math.random() < 0.38) cand.add(cx + ',' + cz);
+        else openCount++;
+      }
+    }
+    const seen = new Set([SPAWN.cx + ',' + SPAWN.cz]), q = [[SPAWN.cx, SPAWN.cz]];
+    for (let i = 0; i < q.length; i++) {
+      for (const [dx, dz] of D4) {
+        const nx = q[i][0] + dx, nz = q[i][1] + dz, k = nx + ',' + nz;
+        if (Math.abs(nx) < 12 && Math.abs(nz) < 12 && !inRoomCell(nx, nz) && !cand.has(k) && !seen.has(k)) { seen.add(k); q.push([nx, nz]); }
+      }
+    }
+    if (seen.size > bestReach) { bestReach = seen.size; plan = cand; }
+    if (seen.size >= openCount * 0.95) break;
+  }
+  // ---- Connectivity repair: no sealed spawn, no unreachable pockets, no walls blocking the only way ----
+  plan.delete('6,11'); plan.delete('10,11');                       // both ends of the entrance pad always open
+  const kOf = (x, z) => x + ',' + z;
+  const inner = (x, z) => Math.abs(x) < 12 && Math.abs(z) < 12 && !inRoomCell(x, z);
+  for (let guard = 0; guard < 400; guard++) {
+    const comp = new Map(), comps = [];
+    for (let x = -11; x <= 11; x++) for (let z = -11; z <= 11; z++) {
+      const k = kOf(x, z);
+      if (!inner(x, z) || plan.has(k) || comp.has(k)) continue;
+      const id = comps.length, cells = [[x, z]]; comp.set(k, id);
+      for (let i = 0; i < cells.length; i++) for (const [dx, dz] of D4) {
+        const nx = cells[i][0] + dx, nz = cells[i][1] + dz, nk = kOf(nx, nz);
+        if (inner(nx, nz) && !plan.has(nk) && !comp.has(nk)) { comp.set(nk, id); cells.push([nx, nz]); }
+      }
+      comps.push(cells);
+    }
+    const main = comp.get(kOf(SPAWN.cx, SPAWN.cz));
+    let filled = false;                                              // seal tiny dead pockets with wall
+    comps.forEach((cells, id) => {
+      if (id !== main && cells.length < 4 && cells.every(c => !cellSkipped(c[0], c[1]))) { cells.forEach(c => plan.add(kOf(c[0], c[1]))); filled = true; }
+    });
+    if (filled) continue;
+    if (comps.length <= 1) break;
+    // carve the shortest wall corridor from the start region to the nearest separate region
+    const prev = new Map(), q = [];
+    for (const c of comps[main]) { prev.set(kOf(c[0], c[1]), null); q.push(c); }
+    let hit = null;
+    for (let i = 0; i < q.length && !hit; i++) for (const [dx, dz] of D4) {
+      const nx = q[i][0] + dx, nz = q[i][1] + dz, nk = kOf(nx, nz);
+      if (!inner(nx, nz) || prev.has(nk)) continue;
+      prev.set(nk, q[i]);
+      if (!plan.has(nk) && comp.get(nk) !== main) { hit = nk; break; }
+      q.push([nx, nz]);
+    }
+    if (!hit) break;
+    for (let c = prev.get(hit); c; c = prev.get(kOf(c[0], c[1]))) plan.delete(kOf(c[0], c[1]));
+  }
+
+  for (let x = -mazeSize; x <= mazeSize; x += 2) {
+    for (let z = -mazeSize; z <= mazeSize; z += 2) {
+      const cx = x / 2, cz = z / 2;
+      if (cellSkipped(cx, cz)) continue;
+      if (plan.has(cx + ',' + cz)) {
+        // Organized wall textures by zone
+        let matIndex = 0;
+        const distFromCenter = Math.hypot(cx, cz);
+        const nearChamber = (cx >= 5 && cz >= 5);
+        const isOuterWall = (Math.abs(x) === mazeSize || Math.abs(z) === mazeSize);
+
+        if (isOuterWall) {
+          matIndex = 2; // Metal panels on outer boundary
+        } else if (nearChamber) {
+          matIndex = 3; // Rusted near containment chamber
+        } else if (distFromCenter < 4) {
+          matIndex = 0; // Dark near start
+        } else if (distFromCenter < 8) {
+          matIndex = 1; // Concrete in mid zones
+        } else {
+          matIndex = 2; // Metal panels farther out
+        }
+
+        const wall = new THREE.Mesh(wallGeo, wallMats[matIndex]);
+        wall.position.set(x * 2, 2.5, z * 2);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        scene.add(wall);
+        walls.push(new THREE.Box3().setFromObject(wall));
+        wallCells.add((x / 2) + ',' + (z / 2));
+
+        // Random blood stain decals on some walls
+        if (Math.random() < 0.42) {
+          const sides = [
+            { offset: [0, 0, 2.02], rot: [0, 0, 0] },
+            { offset: [0, 0, -2.02], rot: [0, Math.PI, 0] },
+            { offset: [2.02, 0, 0], rot: [0, Math.PI/2, 0] },
+            { offset: [-2.02, 0, 0], rot: [0, -Math.PI/2, 0] }
+          ];
+          const side = sides[Math.floor(Math.random() * sides.length)];
+          const stain = new THREE.Mesh(new THREE.PlaneGeometry(2.2 + Math.random() * 1.4, 2.8 + Math.random() * 1.2), bloodMats[Math.floor(Math.random() * 4)]);
+          stain.position.set(
+            wall.position.x + side.offset[0],
+            wall.position.y + (Math.random() - 0.4) * 1.5,
+            wall.position.z + side.offset[2]
+          );
+          stain.rotation.set(...side.rot);
+          stain.renderOrder = 1;
+          scene.add(stain);
+        }
+      }
+    }
+  }
+}
+
+function createContainmentRoom() {
+  const roomCenter = new THREE.Vector3(32, 0, 32);
+  const roomSize = 18;
+  const half = roomSize / 2;
+  const wallH = 5.2;
+  const wallT = 0.45;
+
+  const roomWallMat = new THREE.MeshStandardMaterial({ color: 0x1c222c, roughness: 0.75, metalness: 0.35 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.45, metalness: 0.75 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.55, metalness: 0.65 });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0xaaddff,
+    transparent: true,
+    opacity: 0.18,
+    roughness: 0.05,
+    metalness: 0.3,
+    side: THREE.DoubleSide
+  });
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 });
+  const brokenWireMat = new THREE.MeshStandardMaterial({ color: 0x550000, roughness: 0.6, emissive: 0x330000, emissiveIntensity: 0.4 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x332200, emissiveIntensity: 0.2 });
+
+  // Floor paneling inside the room
+  const floorPanel = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomSize - 0.4, roomSize - 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x252a32, roughness: 0.9, metalness: 0.2 })
+  );
+  floorPanel.rotation.x = -Math.PI / 2;
+  floorPanel.position.set(roomCenter.x, 0.02, roomCenter.z);
+  scene.add(floorPanel);
+
+  // Outer room walls with proper door gap on south side
+  const wallDefs = [
+    { x: roomCenter.x, z: roomCenter.z - half - wallT / 2, w: roomSize + wallT * 2, d: wallT }, // North
+    { x: roomCenter.x + half + wallT / 2, z: roomCenter.z, w: wallT, d: roomSize },             // East
+    { x: roomCenter.x - half - wallT / 2, z: roomCenter.z, w: wallT, d: roomSize },             // West
+    { x: roomCenter.x - 5.2, z: roomCenter.z + half + wallT / 2, w: 7.6, d: wallT },            // South left
+    { x: roomCenter.x + 5.2, z: roomCenter.z + half + wallT / 2, w: 7.6, d: wallT }             // South right
+  ];
+  for (const p of wallDefs) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(p.w, wallH, p.d), roomWallMat);
+    wall.position.set(p.x, wallH / 2, p.z);
+    wall.castShadow = wall.receiveShadow = true;
+    scene.add(wall);
+    walls.push(new THREE.Box3().setFromObject(wall));
+  }
+
+  // Door frame
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a4555, metalness: 0.7, roughness: 0.3 });
+  const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.6, 0.5), frameMat);
+  frameLeft.position.set(roomCenter.x - 2.15, 2.3, roomCenter.z + half + 0.1);
+  const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.6, 0.5), frameMat);
+  frameRight.position.set(roomCenter.x + 2.15, 2.3, roomCenter.z + half + 0.1);
+  const frameTop = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.3, 0.5), frameMat);
+  frameTop.position.set(roomCenter.x, 4.55, roomCenter.z + half + 0.1);
+  scene.add(frameLeft, frameRight, frameTop);
+
+  // Illuminated room identification sign, mounted above the south-facing door.
+  const signCanvas = document.createElement('canvas');
+  signCanvas.width = 512;
+  signCanvas.height = 128;
+  const signCtx = signCanvas.getContext('2d');
+  signCtx.fillStyle = '#101923';
+  signCtx.fillRect(0, 0, 512, 128);
+  signCtx.strokeStyle = '#67dfff';
+  signCtx.lineWidth = 7;
+  signCtx.strokeRect(5, 5, 502, 118);
+  signCtx.fillStyle = '#d9f7ff';
+  signCtx.font = 'bold 46px Courier New';
+  signCtx.textAlign = 'center';
+  signCtx.textBaseline = 'middle';
+  signCtx.shadowColor = '#45cfff';
+  signCtx.shadowBlur = 12;
+  signCtx.fillText('CONTAINMENT ROOM', 256, 64);
+  const signTexture = new THREE.CanvasTexture(signCanvas);
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.2, 1.05),
+    new THREE.MeshBasicMaterial({ map: signTexture, toneMapped: false })
+  );
+  sign.position.set(roomCenter.x, 5.05, roomCenter.z + half + 1.15);
+  scene.add(sign);
+  const signGlow = new THREE.PointLight(0x55ccff, 0.45, 5);
+  signGlow.position.set(roomCenter.x, 5.0, roomCenter.z + half + 1.45);
+  scene.add(signGlow);
+
+  // Sliding door (single panel that slides right into the wall)
+  const doorGeo = new THREE.BoxGeometry(4.0, 4.3, 0.22);
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x2c3844, metalness: 0.85, roughness: 0.25 });
+  containmentDoor = new THREE.Mesh(doorGeo, doorMat);
+  containmentDoor.position.set(roomCenter.x, 2.15, roomCenter.z + half + 0.12);
+  scene.add(containmentDoor);
+  doorClosedX = containmentDoor.position.x;
+  doorFramePos = containmentDoor.position.clone();
+
+  // Door details: panels and status light
+  const panel1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.6, 0.04), darkMetal);
+  panel1.position.set(0, 0.6, 0.12);
+  const panel2 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.6, 0.04), darkMetal);
+  panel2.position.set(0, -0.9, 0.12);
+  const statusLight = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.06), new THREE.MeshBasicMaterial({ color: 0xff3333 }));
+  statusLight.position.set(1.6, 1.7, 0.14);
+  containmentDoor.add(panel1, panel2, statusLight);
+  containmentDoor.userData.statusLight = statusLight;
+
+  // Door collision box (updated every frame)
+  doorCollisionBox = new THREE.Box3().setFromObject(containmentDoor);
+  walls.push(doorCollisionBox);
+
+  // Containment chamber – more detailed
+  const chamber = new THREE.Group();
+  chamber.position.copy(roomCenter);
+
+  // Heavy base
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.8, 0.35, 20), darkMetal);
+  base.position.y = 0.18;
+  chamber.add(base);
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 8, 20), metalMat);
+  baseRing.rotation.x = Math.PI / 2;
+  baseRing.position.y = 0.35;
+  chamber.add(baseRing);
+
+  // Glass cylinder with slight thickness
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 3.6, 20, 1, true), glassMat);
+  glass.position.y = 2.15;
+  chamber.add(glass);
+
+  // Top clamp ring
+  const topRing = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.18, 8, 18), metalMat);
+  topRing.rotation.x = Math.PI / 2;
+  topRing.position.y = 3.95;
+  chamber.add(topRing);
+
+  // Central containment pod
+  const pod = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 12), new THREE.MeshStandardMaterial({
+    color: 0x0a0a0a, emissive: 0x330000, emissiveIntensity: 0.6, metalness: 0.5, roughness: 0.3
+  }));
+  pod.position.y = 2.0;
+  chamber.add(pod);
+
+  // Connecting tubes from pillars to pod
+  for (let i = 0; i < 4; i++) {
+    const ang = (i / 4) * Math.PI * 2;
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 3.5, 8), metalMat);
+    pillar.position.set(Math.cos(ang) * 2.7, 1.75, Math.sin(ang) * 2.7);
+    chamber.add(pillar);
+
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 6), wireMat);
+    tube.position.set(Math.cos(ang) * 1.4, 2.0, Math.sin(ang) * 1.4);
+    tube.rotation.z = Math.PI / 2;
+    tube.rotation.y = -ang;
+    chamber.add(tube);
+  }
+
+  // Warning stripes on base
+  for (let i = 0; i < 8; i++) {
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.15), stripeMat);
+    const ang = (i / 8) * Math.PI * 2;
+    stripe.position.set(Math.cos(ang) * 3.4, 0.4, Math.sin(ang) * 3.4);
+    stripe.rotation.y = -ang;
+    chamber.add(stripe);
+  }
+
+  // Pulsing warning light
+  const warnLight = new THREE.PointLight(0xff2200, 1.5, 14);
+  warnLight.position.set(0, 3.6, 0);
+  chamber.add(warnLight);
+  const warnMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff2200 }));
+  warnMesh.position.copy(warnLight.position);
+  chamber.add(warnMesh);
+  chamber.userData.warnLight = warnLight;
+
+  scene.add(chamber);
+
+  // Ceiling pipes and hanging wires (more realistic distribution)
+  for (let i = 0; i < 12; i++) {
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 6 + Math.random() * 4, 6), darkMetal);
+    pipe.rotation.z = Math.PI / 2;
+    pipe.position.set(
+      roomCenter.x + (Math.random() - 0.5) * 14,
+      4.6,
+      roomCenter.z + (Math.random() - 0.5) * 14
+    );
+    pipe.rotation.y = Math.random() * Math.PI;
+    scene.add(pipe);
+  }
+
+  // Torn / hanging wires
+  for (let i = 0; i < 35; i++) {
+    const len = 1.2 + Math.random() * 3.8;
+    const isBroken = Math.random() < 0.4;
+    const wire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, len, 5),
+      isBroken ? brokenWireMat : wireMat
+    );
+    wire.position.set(
+      roomCenter.x + (Math.random() - 0.5) * 15,
+      1.2 + Math.random() * 3.0,
+      roomCenter.z + (Math.random() - 0.5) * 15
+    );
+    wire.rotation.set(
+      (Math.random() - 0.5) * 1.4,
+      Math.random() * Math.PI,
+      (Math.random() - 0.5) * 1.6
+    );
+    scene.add(wire);
+
+    // Hanging segments from ceiling
+    if (Math.random() < 0.45) {
+      const hangLen = 0.6 + Math.random() * 1.8;
+      const hang = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, hangLen, 4), isBroken ? brokenWireMat : wireMat);
+      hang.position.set(wire.position.x, 4.8 - hangLen / 2, wire.position.z);
+      hang.rotation.x = (Math.random() - 0.5) * 0.4;
+      scene.add(hang);
+    }
+  }
+
+  // Control consoles along walls
+  for (let i = 0; i < 3; i++) {
+    const console = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.6), darkMetal);
+    const ang = (i / 3) * Math.PI * 1.2 - 0.6;
+    console.position.set(
+      roomCenter.x + Math.cos(ang) * 6.5,
+      0.55,
+      roomCenter.z + Math.sin(ang) * 6.5
+    );
+    console.rotation.y = -ang + Math.PI;
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.5), new THREE.MeshBasicMaterial({ color: 0x003322 }));
+    screen.position.set(0, 0.35, 0.32);
+    console.add(screen);
+    scene.add(console);
+    walls.push(new THREE.Box3().setFromObject(console));
+  }
+
+  // Dense, clearly visible volumetric-style smoke inside the containment room.
+  const smokeTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 3, 64, 64, 63);
+    g.addColorStop(0, 'rgba(235,242,250,0.88)');
+    g.addColorStop(0.28, 'rgba(195,205,218,0.68)');
+    g.addColorStop(0.62, 'rgba(130,145,162,0.32)');
+    g.addColorStop(1, 'rgba(70,82,98,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  smokeTex.encoding = THREE.sRGBEncoding;
+
+  const smokes = [];
+  for (let i = 0; i < 90; i++) {
+    const size = 2.6 + Math.random() * 3.0;
+    const material = new THREE.MeshBasicMaterial({
+      map: smokeTex,
+      color: 0xdde5ee,
+      transparent: true,
+      opacity: 0.48 + Math.random() * 0.24,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.NormalBlending
+    });
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(size, size), material);
+    s.position.set(
+      roomCenter.x + (Math.random() - 0.5) * 6.2,
+      0.35 + Math.random() * 4.2,
+      roomCenter.z + (Math.random() - 0.5) * 6.2
+    );
+    s.userData = {
+      speed: 0.12 + Math.random() * 0.22,
+      driftX: (Math.random() - 0.5) * 0.12,
+      driftZ: (Math.random() - 0.5) * 0.12,
+      phase: Math.random() * Math.PI * 2,
+      rot: (Math.random() - 0.5) * 0.12,
+      baseOp: 0.48 + Math.random() * 0.24
+    };
+    s.renderOrder = 3;
+    scene.add(s);
+    smokes.push(s);
+  }
+  window.containmentSmokes = smokes;
+  window.containmentChamber = chamber;
+
+  // Room lighting
+  const roomLight = new THREE.PointLight(0x556677, 0.9, 22);
+  roomLight.position.set(roomCenter.x, 3.8, roomCenter.z);
+  scene.add(roomLight);
+
+  showNotification("CONTAINMENT CHAMBER DETECTED — FAR EAST");
+}
+
+// ================= ORDERED INDUSTRIAL LAYOUT =================
+// Machines stand flush against maze walls, facing the corridor, one per open cell,
+// at a regular spacing. Equipment types follow zones (cabinets/barrels near the
+// start, pumps/generators mid-way, tanks/heavy machines far out) so the whole
+// facility reads as a planned plant. Overhead pipe runs tie it together.
+function spawnFactoryMachinery() {
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.6, metalness: 0.7 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.5, metalness: 0.8 });
+  const rustMat = new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.85, metalness: 0.3 });
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.4, metalness: 0.9 });
+  const glowMat = new THREE.MeshStandardMaterial({ color: 0x113322, emissive: 0x00ff66, emissiveIntensity: 0.5 });
+  const redMat = new THREE.MeshStandardMaterial({ color: 0x330808, emissive: 0xff2200, emissiveIntensity: 0.6 });
+  const yellowMat = new THREE.MeshStandardMaterial({ color: 0xccaa22, roughness: 0.7, metalness: 0.3 });
+
+  const box = (g, w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); g.add(o); return o; };
+  const cyl = (g, rt, rb, h, m, x, y, z, seg, rx, rz) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 12), m); o.position.set(x, y, z); if (rx) o.rotation.x = rx; if (rz) o.rotation.z = rz; g.add(o); return o; };
+
+  // Each builder: local +z is the front (faces the corridor), back is at z = -depth/2.
+  const B = {
+    generator() { const g = new THREE.Group();
+      box(g, 1.8, 1.1, 1.2, darkMetal, 0, 0.55, 0); box(g, 1.6, 0.12, 1.0, metalMat, 0, 1.16, 0);
+      box(g, 0.4, 0.45, 0.06, glowMat, -0.4, 0.65, 0.62); box(g, 0.12, 0.12, 0.05, redMat, 0.4, 0.8, 0.62);
+      cyl(g, 0.16, 0.16, 1.4, rustMat, 0.55, 1.85, -0.25, 8); return { g, depth: 1.2 }; },
+    tank() { const g = new THREE.Group();
+      cyl(g, 1.0, 1.1, 0.3, darkMetal, 0, 0.15, 0, 14); cyl(g, 0.75, 0.75, 2.4, metalMat, 0, 1.5, 0, 14);
+      cyl(g, 0.8, 0.55, 0.4, rustMat, 0, 2.9, 0, 12);
+      for (const y of [0.9, 1.5, 2.1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.04, 6, 16), darkMetal); r.rotation.x = Math.PI / 2; r.position.y = y; g.add(r); }
+      cyl(g, 0.08, 0.08, 1.0, pipeMat, 0, 0.5, 0.95, 8, Math.PI / 2); box(g, 0.14, 0.14, 0.14, yellowMat, 0, 0.5, 1.0);
+      return { g, depth: 1.6 }; },
+    cooling() { const g = new THREE.Group();
+      box(g, 1.6, 1.7, 1.0, darkMetal, 0, 0.85, 0); cyl(g, 0.42, 0.42, 0.15, metalMat, 0, 1.2, 0.52, 14, Math.PI / 2);
+      cyl(g, 0.05, 0.05, 0.9, darkMetal, 0, 1.2, 0.6, 6, Math.PI / 2); box(g, 1.2, 0.5, 0.08, metalMat, 0, 0.45, 0.52);
+      return { g, depth: 1.0 }; },
+    cabinets() { const g = new THREE.Group();
+      for (let i = -1; i <= 1; i++) { box(g, 0.7, 1.9, 0.5, darkMetal, i * 0.78, 0.95, 0); box(g, 0.62, 1.7, 0.05, metalMat, i * 0.78, 0.95, 0.27);
+        box(g, 0.08, 0.08, 0.04, i === 0 ? redMat : glowMat, i * 0.78 + 0.2, 1.55, 0.3); }
+      return { g, depth: 0.5 }; },
+    pump() { const g = new THREE.Group();
+      box(g, 1.3, 0.8, 1.0, darkMetal, 0, 0.4, 0); cyl(g, 0.35, 0.35, 0.6, metalMat, 0, 1.1, 0, 10);
+      cyl(g, 0.12, 0.12, 1.4, pipeMat, 0.9, 0.7, 0, 8, 0, Math.PI / 2); box(g, 0.2, 0.3, 0.2, yellowMat, 0.9, 0.95, 0);
+      return { g, depth: 1.0 }; },
+    barrels() { const g = new THREE.Group();
+      for (let i = -1; i <= 1; i++) { cyl(g, 0.28, 0.28, 0.9, rustMat, i * 0.7, 0.45, 0, 10); cyl(g, 0.3, 0.3, 0.08, yellowMat, i * 0.7, 0.6, 0, 10); }
+      return { g, depth: 0.7 }; },
+    block() { const g = new THREE.Group();
+      box(g, 2.2, 2.0, 1.4, metalMat, 0, 1.0, 0); box(g, 0.25, 0.25, 1.2, darkMetal, 1.2, 1.6, 0.1);
+      cyl(g, 0.4, 0.4, 0.18, rustMat, -0.7, 0.5, 0.75, 16, Math.PI / 2); box(g, 0.5, 0.15, 0.05, yellowMat, 0, 1.8, 0.72);
+      box(g, 0.2, 0.2, 0.05, redMat, 0.7, 1.4, 0.72); return { g, depth: 1.4 }; },
+    rack() { const g = new THREE.Group();
+      for (let i = 0; i < 3; i++) cyl(g, 0.12, 0.12, 3.2, pipeMat, 0, 1.0 + i * 0.5, 0, 8, 0, Math.PI / 2);
+      for (const x of [-1.5, 0, 1.5]) box(g, 0.18, 2.4, 0.18, darkMetal, x, 1.2, 0);
+      return { g, depth: 0.4 }; },
+    conveyor() { const g = new THREE.Group();
+      box(g, 2.8, 0.4, 0.8, darkMetal, 0, 0.2, 0); box(g, 2.6, 0.08, 0.5, metalMat, 0, 0.45, 0);
+      for (const x of [-1.2, 0, 1.2]) box(g, 0.15, 0.8, 0.15, darkMetal, x, 0.6, 0);
+      return { g, depth: 0.8 }; }
+  };
+  const zones = {
+    near: ['cabinets', 'barrels', 'rack', 'cabinets', 'barrels'],
+    mid:  ['pump', 'cooling', 'generator', 'conveyor', 'cabinets', 'rack'],
+    far:  ['tank', 'block', 'generator', 'pump', 'tank', 'conveyor', 'cooling']
+  };
+  const zi = { near: 0, mid: 0, far: 0 };
+
+  // Hazard-stripe floor marking in front of every machine
+  const sc = document.createElement('canvas'); sc.width = 128; sc.height = 32;
+  const sx = sc.getContext('2d'); sx.fillStyle = '#181818'; sx.fillRect(0, 0, 128, 32); sx.fillStyle = '#d4a812';
+  for (let i = -32; i < 160; i += 32) { sx.beginPath(); sx.moveTo(i, 32); sx.lineTo(i + 16, 32); sx.lineTo(i + 32, 0); sx.lineTo(i + 16, 0); sx.fill(); }
+  const stripeMat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(sc), roughness: 0.8, metalness: 0.1 });
+
+  // Cells that must stay clear: reachable-only, not containment area, not occupied by pickups / lockers / exit
+  const openSet = new Set(openCells.map(c => c[0] + ',' + c[1]));
+  const blocked = new Set();
+  const markCell = p => { const c = cellOf(p); blocked.add(c[0] + ',' + c[1]); };
+  batteries.forEach(b => markCell(b.position)); relics.forEach(r => markCell(r.position));
+  lockers.forEach(l => markCell({ x: l.x, z: l.z })); if (exitGate) blocked.add(exitGate.userData.standCell);
+  const reserved = (cx, cz) => (cx >= 5 && cx <= 11 && cz >= 5 && cz <= 14) || (Math.abs(cx) <= 2 && Math.abs(cz) <= 2);
+
+  // Dust: a thin translucent dusty shell over each machine mesh (heavier on upper surfaces)
+  const dustMats = [0, 1, 2].map(() => new THREE.MeshStandardMaterial({
+    map: createDustTexture(), transparent: true, depthWrite: false, roughness: 1, metalness: 0,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1
+  }));
+  let dustI = 0;
+  const dustify = (group) => {
+    const meshes = [];
+    group.traverse(o => { if (o.isMesh && !(o.material.emissive && o.material.emissive.getHex() !== 0)) meshes.push(o); });
+    for (const m of meshes) {
+      const shell = new THREE.Mesh(m.geometry, dustMats[dustI++ % 3]);
+      shell.scale.setScalar(1.025); shell.renderOrder = 2;
+      m.add(shell);
+    }
+  };
+  const placed = [];
+  const wallList = [...wallCells].map(k => k.split(',').map(Number)).sort((a, b) => (a[0] - b[0]) || (a[1] - b[1]));
+  for (const [wx, wz] of wallList) {
+    if (placed.length >= 90) break;
+    if ((((wx + 12) * 7 + (wz + 12) * 3) % 4) !== 0) continue;        // regular spacing
+    for (const [dx, dz] of D4) {
+      const nx = wx + dx, nz = wz + dz, key = nx + ',' + nz;
+      if (!openSet.has(key) || blocked.has(key) || reserved(nx, nz)) continue;
+      blocked.add(key);
+      const dist = Math.hypot(nx, nz);
+      const zn = dist < 5 ? 'near' : dist < 9 ? 'mid' : 'far';
+      const list = zones[zn], type = list[zi[zn]++ % list.length];
+      const { g, depth } = B[type]();
+      dustify(g);
+      g.position.set(wx * 4 + dx * (2 + depth / 2 + 0.05), 0, wz * 4 + dz * (2 + depth / 2 + 0.05));
+      g.rotation.y = Math.atan2(dx, dz);
+      scene.add(g);
+      walls.push(new THREE.Box3().setFromObject(g));
+      const mark = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.5), stripeMat);
+      mark.rotation.set(-Math.PI / 2, 0, dx !== 0 ? Math.PI / 2 : 0);
+      mark.position.set(g.position.x + dx * (depth / 2 + 0.4), 0.02, g.position.z + dz * (depth / 2 + 0.4));
+      scene.add(mark);
+      placed.push(g);
+      break;
+    }
+  }
+
+  // Overhead pipe runs and cable trays on a regular grid (above head height, no collision)
+  const trayMat = new THREE.MeshStandardMaterial({ color: 0x33383f, roughness: 0.6, metalness: 0.7 });
+  for (let k = -42; k <= 42; k += 12) {
+    if (k >= 22 && k <= 42) continue;                                   // keep the containment room clear
+    const px = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 96, 8), pipeMat);
+    px.rotation.z = Math.PI / 2; px.position.set(0, 4.5, k); scene.add(px);
+    const px2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 96, 8), rustMat);
+    px2.rotation.z = Math.PI / 2; px2.position.set(0, 4.2, k + 0.45); scene.add(px2);
+    const pz = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 96, 8), pipeMat);
+    pz.rotation.x = Math.PI / 2; pz.position.set(k, 4.75, 0); scene.add(pz);
+    const tray = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 96), trayMat);
+    tray.position.set(k + 0.8, 4.95, 0); scene.add(tray);
+  }
+}
+
+function spawnBloodPuddles() {
+  const puddleTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, 128, 128);
+    for (let i = 0; i < 5; i++) {
+      const x = 64 + (Math.random()-0.5)*30;
+      const y = 64 + (Math.random()-0.5)*30;
+      const r = 25 + Math.random()*30;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(90, 8, 8, 0.9)');
+      g.addColorStop(0.5, 'rgba(60, 4, 4, 0.6)');
+      g.addColorStop(1, 'rgba(30, 0, 0, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r * 0.7, Math.random(), 0, Math.PI*2);
+      ctx.fill();
+    }
+    return new THREE.CanvasTexture(c);
+  })();
+
+  const puddleMat = new THREE.MeshBasicMaterial({
+    map: puddleTex,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  for (let i = 0; i < 14; i++) {
+    const c = pickCell(6);
+    const puddle = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.2 + Math.random()*1.8, 0.9 + Math.random()*1.4),
+      puddleMat
+    );
+    puddle.rotation.x = -Math.PI / 2;
+    puddle.position.set(
+      c.x + (Math.random()-0.5)*2.5,
+      0.03,
+      c.z + (Math.random()-0.5)*2.5
+    );
+    puddle.rotation.z = Math.random() * Math.PI;
+    scene.add(puddle);
+  }
+
+  // Extra puddles near the containment room
+  for (let i = 0; i < 5; i++) {
+    const puddle = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.5 + Math.random()*2, 1.1 + Math.random()*1.6),
+      puddleMat
+    );
+    puddle.rotation.x = -Math.PI / 2;
+    puddle.position.set(
+      32 + (Math.random()-0.5)*10,
+      0.03,
+      32 + (Math.random()-0.5)*10
+    );
+    puddle.rotation.z = Math.random() * Math.PI;
+    scene.add(puddle);
+  }
+}
+
+function spawnBatteryPickups() {
+  const batteryGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.32, 12);
+  const batteryMat = new THREE.MeshStandardMaterial({
+    color: 0x33ff55,
+    emissive: 0x114411,
+    emissiveIntensity: 0.6
+  });
+
+  for (let i = 0; i < 6; i++) {
+    const bat = new THREE.Mesh(batteryGeo, batteryMat);
+    const c = pickCell(8); const rx = c.x + (Math.random() - 0.5) * 2, rz = c.z + (Math.random() - 0.5) * 2;
+    bat.position.set(rx, 0.22, rz);
+    scene.add(bat);
+    batteries.push(bat);
+  }
+}
+
+function spawnRelics() {
+  const relicGeo = new THREE.BoxGeometry(0.45, 0.55, 0.18);
+  const relicMat = new THREE.MeshStandardMaterial({
+    color: 0x44ccff,
+    emissive: 0x1188aa,
+    emissiveIntensity: 0.9,
+    metalness: 0.4,
+    roughness: 0.3
+  });
+
+  for (let i = 0; i < RELIC_TARGET; i++) {
+    const relic = new THREE.Mesh(relicGeo, relicMat);
+    const c = pickCell(16); const rx = c.x + (Math.random() - 0.5) * 2, rz = c.z + (Math.random() - 0.5) * 2;
+    relic.position.set(rx, 0.9, rz);
+    relic.userData = { type: 'relic', bobOffset: Math.random() * Math.PI * 2 };
+    scene.add(relic);
+    relics.push(relic);
+
+    const glow = new THREE.PointLight(0x33aaff, 0.7, 6, 2);
+    glow.position.copy(relic.position);
+    glow.position.y += 0.3;
+    scene.add(glow);
+    relic.userData.glow = glow;
+  }
+}
+
+// ================= EXIT GATE (flush with a maze wall) =================
+function makeHazardMat() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 32;
+  const x = c.getContext('2d'); x.fillStyle = '#181818'; x.fillRect(0, 0, 128, 32); x.fillStyle = '#d4a812';
+  for (let i = -32; i < 160; i += 32) { x.beginPath(); x.moveTo(i, 32); x.lineTo(i + 16, 32); x.lineTo(i + 32, 0); x.lineTo(i + 16, 0); x.fill(); }
+  return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.8, metalness: 0.1 });
+}
+
+function drawGateScreen() {
+  const U = exitGate.userData, ctx = U.screenCtx;
+  const s = gateSeq, t = s ? s.t : 0;
+  const key = s ? 'seq' + Math.floor(t * 20) : U.state + ':' + relicsCollected;
+  if (key === U.screenKey) return;
+  U.screenKey = key;
+  ctx.fillStyle = '#031210'; ctx.fillRect(0, 0, 256, 160);
+  ctx.strokeStyle = '#0fd0c0'; ctx.lineWidth = 2; ctx.strokeRect(3, 3, 250, 154);
+  ctx.fillStyle = '#7ff5ea'; ctx.font = 'bold 15px Courier New'; ctx.textAlign = 'left';
+  ctx.fillText('EXTRACTION GATE CONTROL', 12, 24);
+  ctx.font = '13px Courier New';
+  if (s) {
+    ctx.fillText(t < 0.5 ? 'DRIVE DETECTED...' : 'VERIFYING RELICS', 12, 44);
+    const done = Math.max(0, Math.min(5, Math.floor((t - 0.5) / 0.5)));
+    for (let i = 0; i < 5; i++) {
+      const ok = i < done;
+      ctx.fillStyle = ok ? '#6dff9a' : '#3d6a66';
+      ctx.fillText('RELIC_CORE_0' + (i + 1) + (ok ? '  [ OK ]' : '  [ .. ]'), 12, 68 + i * 15);
+    }
+    if (t >= 3.0) { ctx.fillStyle = '#6dff9a'; ctx.font = 'bold 15px Courier New'; ctx.fillText('ACCESS GRANTED', 12, 150); }
+  } else if (U.state === 'open') {
+    ctx.fillStyle = '#6dff9a'; ctx.fillText('ACCESS GRANTED', 12, 50); ctx.fillText('GATE OPEN - EXTRACT NOW', 12, 72);
+  } else if (U.state === 'ready') {
+    ctx.fillStyle = '#ffd36a'; ctx.fillText('ALL 5 RELICS ON DRIVE', 12, 50); ctx.fillText('INSERT DRIVE TO VERIFY', 12, 72);
+  } else {
+    ctx.fillStyle = '#ff6a6a'; ctx.fillText('GATE LOCKED', 12, 50);
+    ctx.fillStyle = '#9fd'; ctx.fillText('RELICS ON DRIVE: ' + relicsCollected + ' / ' + RELIC_TARGET, 12, 74);
+    ctx.fillText('RECOVER ALL 5 TO UNLOCK', 12, 96);
+  }
+  U.screenTex.needsUpdate = true;
+}
+
+function createExitGate() {
+  // pick an open cell (far from the start) that has a maze wall beside it; the gate is built flush on that wall face
+  const cands = [];
+  for (const c of openCells) {
+    const cx = c[0], cz = c[1];
+    if (Math.hypot(cx - SPAWN.cx, cz - SPAWN.cz) * 4 < 32) continue;
+    if (cx >= 5 && cx <= 11 && cz >= 5 && cz <= 14) continue;     // keep away from the containment room
+    for (const [dx, dz] of D4) {
+      if (wallCells.has((cx + dx) + ',' + (cz + dz))) cands.push({ cx, cz, dx: -dx, dz: -dz, wx: cx + dx, wz: cz + dz });
+    }
+  }
+  const pick = cands.length ? cands[Math.floor(Math.random() * cands.length)] : { cx: 8, cz: -8, dx: -1, dz: 0, wx: 9, wz: -8 };
+  // direction d points from the wall into the corridor
+  const dx = pick.dx, dz = pick.dz;
+  const g = new THREE.Group();
+  g.position.set(pick.wx * 4 + dx * 2, 0, pick.wz * 4 + dz * 2);       // exactly on the wall face
+  g.rotation.y = Math.atan2(dx, dz);
+  scene.add(g);
+  exitGate = g;
+
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a4555, metalness: 0.7, roughness: 0.35 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x1f252d, metalness: 0.7, roughness: 0.5 });
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
+  const DX = -0.6;                                                    // door centre along the wall
+
+  // frame
+  add(new THREE.BoxGeometry(0.25, 4.0, 0.4), frameMat, DX - 1.225, 2.0, 0.2);
+  add(new THREE.BoxGeometry(0.25, 4.0, 0.4), frameMat, DX + 1.225, 2.0, 0.2);
+  add(new THREE.BoxGeometry(2.7, 0.6, 0.4), frameMat, DX, 4.3, 0.2);
+  // glowing exit passage revealed when the door opens
+  const gc = document.createElement('canvas'); gc.width = 64; gc.height = 256;
+  const gx = gc.getContext('2d'); const gr = gx.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, '#d8ffe6'); gr.addColorStop(1, '#3dff8a'); gx.fillStyle = gr; gx.fillRect(0, 0, 64, 256);
+  const passage = add(new THREE.PlaneGeometry(2.2, 4.0), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc) }), DX, 2.0, 0.03);
+  // rolling shutter door (top-pivoted so it rolls up into the lintel)
+  const dc = document.createElement('canvas'); dc.width = 128; dc.height = 256;
+  const dx2 = dc.getContext('2d'); dx2.fillStyle = '#2c3844'; dx2.fillRect(0, 0, 128, 256);
+  for (let y = 0; y < 256; y += 16) { dx2.fillStyle = '#3b4a58'; dx2.fillRect(0, y, 128, 10); dx2.fillStyle = '#18202a'; dx2.fillRect(0, y + 10, 128, 6); }
+  dx2.fillStyle = '#d4a812'; for (let i = -40; i < 170; i += 40) { dx2.beginPath(); dx2.moveTo(i, 256); dx2.lineTo(i + 20, 256); dx2.lineTo(i + 40, 226); dx2.lineTo(i + 20, 226); dx2.fill(); }
+  const pivot = new THREE.Group(); pivot.position.set(DX, 4.0, 0.14); g.add(pivot);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(2.2, 4.0, 0.1), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(dc), metalness: 0.7, roughness: 0.4 }));
+  door.position.y = -2.0; pivot.add(door);
+  // EXTRACTION sign
+  const sc = document.createElement('canvas'); sc.width = 512; sc.height = 96;
+  const sx = sc.getContext('2d'); sx.fillStyle = '#0c1a14'; sx.fillRect(0, 0, 512, 96);
+  sx.strokeStyle = '#3dff8a'; sx.lineWidth = 6; sx.strokeRect(4, 4, 504, 88);
+  sx.fillStyle = '#b6ffd0'; sx.font = 'bold 44px Courier New'; sx.textAlign = 'center'; sx.textBaseline = 'middle'; sx.fillText('EXTRACTION GATE', 256, 50);
+  add(new THREE.PlaneGeometry(2.6, 0.49), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc) }), DX, 4.75, 0.05);
+  // status lamp + light
+  const lamp = add(new THREE.BoxGeometry(0.34, 0.12, 0.05), new THREE.MeshBasicMaterial({ color: 0xff3322 }), DX, 4.3, 0.42);
+  const statusLight = new THREE.PointLight(0xff3300, 0.6, 9);
+  statusLight.position.set(DX, 3.9, 1.0); g.add(statusLight);
+  // hazard marking on the floor in front of the door and the terminal
+  const hz = add(new THREE.PlaneGeometry(3.6, 0.5), makeHazardMat(), 0.35, 0.02, 0.7);
+  hz.rotation.x = -Math.PI / 2;
+
+  // ---- computer terminal beside the door (flush to the wall too) ----
+  const TX = 1.35, TZ = 0.32;
+  const term = new THREE.Group(); term.position.set(TX, 0, TZ); g.add(term);
+  const tadd = (geo, mat, x, y, z, rx) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); if (rx) m.rotation.x = rx; term.add(m); return m; };
+  tadd(new THREE.BoxGeometry(0.8, 0.95, 0.55), darkMetal, 0, 0.475, 0);
+  tadd(new THREE.BoxGeometry(0.84, 0.06, 0.6), frameMat, 0, 0.96, 0);
+  tadd(new THREE.BoxGeometry(0.76, 0.52, 0.1), darkMetal, 0, 1.3, -0.02, -0.18);
+  tadd(new THREE.BoxGeometry(0.62, 0.05, 0.22), frameMat, 0, 1.01, 0.2, -0.12);   // keyboard slab
+  const scr = document.createElement('canvas'); scr.width = 256; scr.height = 160;
+  const screenTex = new THREE.CanvasTexture(scr);
+  const screen = tadd(new THREE.PlaneGeometry(0.68, 0.42), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }), 0, 1.3, 0.036, -0.18);
+  tadd(new THREE.BoxGeometry(0.2, 0.05, 0.02), new THREE.MeshBasicMaterial({ color: 0x0a0a0a }), 0.15, 0.78, 0.28);      // USB port
+  tadd(new THREE.BoxGeometry(0.03, 0.03, 0.02), new THREE.MeshBasicMaterial({ color: 0x55ccff }), -0.25, 0.78, 0.28);     // port LED
+  // the flash drive once it is plugged in
+  const plugged = new THREE.Group(); plugged.position.set(0.15, 0.78, 0.30); plugged.visible = false; term.add(plugged);
+  const pb = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.012, 0.075), new THREE.MeshStandardMaterial({ color: 0x1b4fa8, roughness: 0.4, metalness: 0.3, emissive: 0x061428 })); pb.position.z = 0.045; plugged.add(pb);
+  const pt = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.006, 0.03), new THREE.MeshStandardMaterial({ color: 0xb8c0c8, metalness: 0.9, roughness: 0.25 })); pt.position.z = -0.002; plugged.add(pt);
+  const pl = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.004, 0.006), new THREE.MeshBasicMaterial({ color: 0x44ff88 })); pl.position.set(0, 0.008, 0.07); plugged.add(pl);
+
+  // floor vents in front of the gate (smoke comes out of these)
+  const vm = new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.9, metalness: 0.6 });
+  [[-1.3, 1.0], [0.1, 1.7]].forEach(([vx, vz]) => { const v = add(new THREE.BoxGeometry(0.8, 0.04, 0.45), vm, vx, 0.02, vz); });
+
+  g.updateMatrixWorld(true);
+
+  // collision: door/frame block (removed when open) + terminal
+  const blockMesh = new THREE.Mesh(new THREE.BoxGeometry(2.7, 4.6, 0.4), new THREE.MeshBasicMaterial());
+  blockMesh.position.set(DX, 2.3, 0.2); blockMesh.visible = false; g.add(blockMesh); g.updateMatrixWorld(true);
+  const doorBox = new THREE.Box3().setFromObject(blockMesh);
+  walls.push(doorBox);
+  walls.push(new THREE.Box3().setFromObject(term));
+
+  const toW = (x, y, z) => g.localToWorld(new THREE.Vector3(x, y, z));
+  g.userData = {
+    state: 'locked', openAmt: 0, pivot, door, passage, lamp, light: statusLight, doorBox, plugged,
+    screenCtx: scr.getContext('2d'), screenTex, screenKey: '',
+    portWorld: toW(TX + 0.15, 0.78, TZ + 0.29),
+    termWorld: toW(TX, 0, TZ),
+    standPos: toW(TX, 0, TZ + 1.15),
+    doorWorld: toW(DX, 0, 0.14),
+    standCell: pick.cx + ',' + pick.cz
+  };
+  // smoke venting from the floor grates in front of the gate
+  [[-1.3, 1.0], [0.1, 1.7]].forEach(([vx, vz]) => {
+    const w = toW(vx, 0.1, vz);
+    addSmokeEmitter({ x: w.x, y: w.y, z: w.z, sx: 0.5, sz: 0.4, vx: 0, vz: 0, rise: 0.55, count: 12, size: 1.1, life: 3.4, op: 0.3 });
+  });
+  drawGateScreen();
+}
+
+function initListeners() {
+  const startBtn = document.getElementById('start-btn');
+  const instructions = document.getElementById('instructions');
+  const restartBtn = document.getElementById('restart-btn');
+  const intro = document.getElementById('intro');
+  // ===== Studio splash -> main menu (Play / Credits / Quit) -> lore =====
+  const STUDIO_NAME = 'Bauxite Studios'; // studio name (shown on splash, credits & footer)
+  document.querySelectorAll('.studio-name-text').forEach(el => { el.textContent = STUDIO_NAME; });
+  const splash = document.getElementById('studio-splash');
+  const mainMenu = document.getElementById('main-menu');
+  // After TRY AGAIN / RUN AGAIN the page reloads: skip splash, menu and lore once.
+  let skipIntroFlow = false;
+  try { if (sessionStorage.getItem('sector2147Restart')) { skipIntroFlow = true; sessionStorage.removeItem('sector2147Restart'); } } catch (e) {}
+  if (skipIntroFlow) {
+    splash.style.display = 'none'; mainMenu.style.display = 'none'; intro.style.display = 'none';
+  } else {
+    let splashDone = false;
+    const endSplash = () => {
+      if (splashDone) return; splashDone = true;
+      splash.classList.add('out');
+      setTimeout(() => { splash.style.display = 'none'; }, 1000);
+    };
+    splash.addEventListener('click', endSplash);
+    document.addEventListener('keydown', endSplash, { once: true });
+    setTimeout(endSplash, 4600);
+  }
+  // Music starts on the first click/key press (browsers require a user gesture). Press M to mute/unmute.
+  const kickMusic = () => Music.start();
+  document.addEventListener('pointerdown', kickMusic, { once: true });
+  document.addEventListener('keydown', kickMusic, { once: true });
+  document.addEventListener('keydown', e => {
+    if (e.code === 'KeyM' && !e.repeat) { Music.start(); showNotification(Music.toggle() ? 'MUSIC: ON' : 'MUSIC: OFF'); }
+  });
+  const showPanel = id => {
+    document.querySelectorAll('.menu-panel').forEach(p => p.classList.toggle('active', p.id === id));
+  };
+  document.getElementById('menu-play-btn').addEventListener('click', () => {
+    mainMenu.style.display = 'none';   // reveals the lore terminal, which types out below
+  });
+  document.getElementById('menu-credits-btn').addEventListener('click', () => showPanel('menu-credits'));
+  document.getElementById('credits-back-btn').addEventListener('click', () => showPanel('menu-main'));
+  document.getElementById('menu-quit-btn').addEventListener('click', () => {
+    try { window.close(); } catch (e) {}   // browsers only allow this for script-opened tabs
+    showPanel('menu-quit');
+  });
+  document.getElementById('quit-back-btn').addEventListener('click', () => showPanel('menu-main'));
+  const NARR = `2147. Sector 2147 was the crown jewel of the corporation: a sprawling automated facility housing thousands of workers, and the birthplace of project "Warden".
+
+Then, overnight, the facility went dead silent. No alarms. No distress calls.
+
+Its last outgoing transmission was a single sentence, looped continuously:
+<span class="q">"It has no eyes. It hunts the light."</span>
+
+You are a salvage technician, sent alone into the abandoned assembly grids to recover five data relics before the company cleanses the site. Insert your drive at each terminal and hold still while it syncs. When the Warden comes, hide.`;
+  const bb = document.getElementById('briefing'), ib = document.getElementById('intro-btn');
+  let ti = 0, tdone = false, tt;
+  function typeNext() {
+    if (ti < NARR.length) {
+      if (NARR[ti] === '<') ti = NARR.indexOf('>', ti) + 1; else ti++;
+      bb.innerHTML = NARR.slice(0, ti) + '<span class="cur"></span>';
+      tt = setTimeout(typeNext, 22);
+    } else finishType();
+  }
+  function finishType() { tdone = true; clearTimeout(tt); bb.innerHTML = NARR; ib.textContent = 'BEGIN RECOVERY'; }
+  ib.addEventListener('click', () => {
+    if (!tdone) { finishType(); return; }
+    intro.style.display = 'none';
+  });
+  // lore starts typing when PLAY is pressed (or immediately when restarting)
+  let loreStarted = false;
+  const startLore = () => { if (!loreStarted) { loreStarted = true; typeNext(); } };
+  if (skipIntroFlow) { /* lore hidden on restart */ }
+  else document.getElementById('menu-play-btn').addEventListener('click', startLore);
+  document.getElementById('over-btn').addEventListener('click', () => { try { sessionStorage.setItem('sector2147Restart', '1'); } catch (e) {} location.reload(); });
+
+  startBtn.addEventListener('click', () => {
+    initAudioEngine();
+    try { controls.lock(); } catch (e) { document.dispatchEvent(new Event('pointerlockerror')); }
+  });
+
+  restartBtn.addEventListener('click', () => {
+    try { sessionStorage.setItem('sector2147Restart', '1'); } catch (e) {}
+    location.reload();
+  });
+
+  controls.addEventListener('lock', () => {
+    fallbackLookActive = false;
+    document.body.classList.add('game-locked');
+    instructions.style.display = 'none';
+    Music.setScene('game');
+  });
+
+  controls.addEventListener('unlock', () => {
+    fallbackLookActive = false;
+    document.body.classList.remove('game-locked');
+    moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
+    if (!gameWon && !over) instructions.style.display = 'flex';
+    Music.setScene('menu');
+  });
+
+  // Fallback when Pointer Lock is blocked (e.g. inside a preview frame):
+  // the camera simply follows the mouse cursor, no clicking or dragging needed.
+  // Moving the mouse turns the view; holding the cursor near a window edge keeps turning.
+  document.addEventListener('pointerlockerror', () => {
+    if (fallbackLookActive) return;
+    fallbackLookActive = true;
+    fallbackCursor.x = window.innerWidth / 2; fallbackCursor.y = window.innerHeight / 2;
+    instructions.style.display = 'none';
+    Music.setScene('game');
+    showNotification('POINTER LOCK BLOCKED: MOVE THE MOUSE TO LOOK AROUND');
+  });
+  window.addEventListener('blur', () => {
+    moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
+  });
+  document.addEventListener('mousemove', e => {
+    fallbackCursor.x = e.clientX; fallbackCursor.y = e.clientY;
+    if (!fallbackLookActive || controls.isLocked || over || gameWon || hiding || gateSeq) return;
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y -= (e.movementX || 0) * 0.002;
+    camera.rotation.x = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, camera.rotation.x - (e.movementY || 0) * 0.002));
+  });
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Escape' && fallbackLookActive) {
+      fallbackLookActive = false;
+      moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
+      if (!gameWon && !over) instructions.style.display = 'flex';
+      Music.setScene('menu');
+    }
+  });
+
+  document.addEventListener('keydown', e => handleKey(e.code, true));
+  document.addEventListener('keyup', e => handleKey(e.code, false));
+
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (isGameLookActive()) toggleTorch();
+  });
+
+  window.addEventListener('resize', onWindowResize);
+}
+
+function handleKey(code, pressed) {
+  switch (code) {
+    case 'KeyW': case 'ArrowUp': moveForward = pressed; break;
+    case 'KeyS': case 'ArrowDown': moveBackward = pressed; break;
+    case 'KeyA': case 'ArrowLeft': moveLeft = pressed; break;
+    case 'KeyD': case 'ArrowRight': moveRight = pressed; break;
+    case 'ShiftLeft': case 'ShiftRight': isSprinting = pressed; break;
+    case 'KeyF':
+      if (pressed && isGameLookActive()) toggleTorch();
+      break;
+    case 'KeyE':
+      if (pressed && isGameLookActive()) { triggerHandGesture('interact', 0.62); tryInteract(); }
+      break;
+  }
+}
+
+function toggleTorch() {
+  if (batteryPower <= 0) return;
+  triggerHandGesture('torch', 0.48);
+  torchOn = !torchOn;
+  torchLight.visible = torchOn;
+  playClickSound();
+  showNotification(torchOn ? "FLASHLIGHT ON" : "FLASHLIGHT OFF");
+}
+
+function showNotification(txt) {
+  const el = document.getElementById('notification');
+  el.innerText = txt;
+  el.style.opacity = '1';
+  clearTimeout(notifyTimer);
+  notifyTimer = setTimeout(() => el.style.opacity = '0', 1400);
+}
+
+function setInteractPrompt(visible, label) {
+  const el = document.getElementById('interact-prompt');
+  if (visible) {
+    el.innerHTML = `<kbd>E</kbd> ${label}`;
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+  }
+}
+
+function drawCollectibleMap() {
+  const canvas = document.getElementById('collectible-map');
+  if (!canvas || !controls) return;
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const halfWorld = 48;
+  const toMap = (x, z) => ({
+    x: ((x + halfWorld) / (halfWorld * 2)) * size,
+    y: ((z + halfWorld) / (halfWorld * 2)) * size
+  });
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#101b25';
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = 'rgba(130, 170, 195, 0.14)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const p = (size / 4) * i;
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(size, p); ctx.stroke();
+  }
+
+  // Remaining relics
+  for (const relic of relics) {
+    const p = toMap(relic.position.x, relic.position.z);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = '#55ddff'; ctx.shadowColor = '#22bbff'; ctx.shadowBlur = 9;
+    ctx.fillRect(-4, -4, 8, 8); ctx.restore();
+  }
+  // Remaining batteries
+  for (const battery of batteries) {
+    const p = toMap(battery.position.x, battery.position.z);
+    ctx.fillStyle = '#65ff78'; ctx.shadowColor = '#35ff55'; ctx.shadowBlur = 7;
+    ctx.fillRect(p.x - 3.5, p.y - 3.5, 7, 7); ctx.shadowBlur = 0;
+  }
+  ctx.fillStyle = '#ffaa55'; ctx.shadowBlur = 0;
+  for (const l of lockers) { const p = toMap(l.px, l.pz); ctx.fillRect(p.x - 2, p.y - 3.5, 4, 7); }
+  // Extraction gate
+  if (exitGate) {
+    const p = toMap(exitGate.position.x, exitGate.position.z);
+    ctx.fillStyle = exitActive ? '#65ff9a' : '#ffcc66';
+    ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('★', p.x, p.y + 5);
+  }
+  // Containment chamber room marker
+  const roomP = toMap(32, 32);
+  ctx.fillStyle = '#ff66aa';
+  ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('\u26A0', roomP.x, roomP.y + 4);
+  // Enemy (Warden) marker
+  if (M.g) {
+    const e = toMap(M.g.position.x, M.g.position.z);
+    const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * (M.state === 'CHASE' ? 10 : 3));
+    ctx.save();
+    ctx.fillStyle = '#ff2222'; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 8 + pulse * 8;
+    ctx.beginPath(); ctx.arc(e.x, e.y, 4 + pulse * 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // Player marker and facing direction
+  const player = controls.getObject();
+  const p = toMap(player.position.x, player.position.z);
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  ctx.save(); ctx.translate(p.x, p.y);
+  ctx.rotate(Math.atan2(direction.x, direction.z));
+  ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function updateHUD() {
+  document.getElementById('relic-hud').innerText = `RELICS: ${relicsCollected} / ${RELIC_TARGET}`;
+  const objEl = document.getElementById('objective-hud');
+  if (relicsCollected < RELIC_TARGET) {
+    const left = RELIC_TARGET - relicsCollected;
+    objEl.innerText = `OBJECTIVE: COLLECT ${left} MORE DATA RELIC${left === 1 ? '' : 'S'}`;
+  } else if (!exitGate || exitGate.userData.state !== 'open') {
+    objEl.innerText = 'OBJECTIVE: INSERT YOUR DRIVE AT THE GATE TERMINAL';
+  } else {
+    objEl.innerText = 'OBJECTIVE: ENTER THE OPEN EXTRACTION GATE';
+  }
+}
+
+// ================= GATE LOGIC =================
+let gateSeq = null;
+const GATE_IN = 0.5, GATE_PER = 0.5, GATE_VERIFY_END = GATE_IN + 5 * GATE_PER, GATE_TOTAL = GATE_VERIFY_END + 0.7;   // 3.7 s total
+function startGateSeq() {
+  const U = exitGate.userData;
+  if (gateSeq || U.state !== 'ready') return;
+  gateSeq = { t: 0, sx: camera.position.x, sz: camera.position.z, yaw: camera.rotation.y, pitch: camera.rotation.x, opened: false };
+  U.state = 'checking';
+  U.screenKey = '';
+  document.getElementById('gatechk').style.display = 'block';
+  setInteractPrompt(false); playClickSound();
+}
+function angLerp(a, b, k) { let d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * k; }
+function updateGate(dt) {
+  if (!exitGate) return;
+  const U = exitGate.userData, tt = clock.getElapsedTime();
+  if (U.state === 'ready') {
+    const on = Math.sin(tt * 5) > 0;
+    U.light.color.setHex(0xffaa22); U.light.intensity = on ? 1.1 : 0.4; U.lamp.material.color.setHex(on ? 0xffbb33 : 0x553311);
+  }
+  if (gateSeq) {
+    const s = gateSeq; s.t += dt;
+    // step up to the terminal and face the USB port
+    const k = Math.min(1, s.t / 0.35), e = k * k * (3 - 2 * k), cam = controls.getObject();
+    cam.position.x = s.sx + (U.standPos.x - s.sx) * e;
+    cam.position.z = s.sz + (U.standPos.z - s.sz) * e;
+    const px = U.portWorld.x - cam.position.x, pz = U.portWorld.z - cam.position.z, py = U.portWorld.y - defaultCamY;
+    const yaw = Math.atan2(-px, -pz), pitch = Math.atan2(py, Math.hypot(px, pz));
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = angLerp(s.yaw, yaw, e);
+    camera.rotation.x = s.pitch + (pitch - s.pitch) * e;
+    camera.rotation.z = 0;
+    // drive goes into the port, then the relics are checked one by one
+    U.plugged.visible = s.t >= 0.42;
+    const verify = Math.max(0, Math.min(1, (s.t - GATE_IN) / (5 * GATE_PER)));
+    document.getElementById('g-bar').style.width = (verify * 100) + '%';
+    const n = Math.max(1, Math.min(5, Math.floor((s.t - GATE_IN) / GATE_PER) + 1));
+    document.getElementById('g-msg').textContent = s.t < GATE_IN ? 'DRIVE DETECTED' : (s.t < GATE_VERIFY_END ? 'VERIFYING RELIC ' + n + ' / 5' : 'ACCESS GRANTED');
+    if (s.t >= GATE_VERIFY_END && !s.opened) {
+      s.opened = true; U.state = 'open'; updateHUD();
+      U.light.color.setHex(0x22ff77); U.light.intensity = 1.6; U.lamp.material.color.setHex(0x33ff77);
+      showNotification('ACCESS GRANTED — GATE OPENING'); playCollectSound(true);
+    }
+    U.openAmt = Math.max(0, Math.min(1, (s.t - GATE_VERIFY_END) / (GATE_TOTAL - GATE_VERIFY_END)));
+    if (s.t >= GATE_TOTAL) {
+      U.openAmt = 1; gateSeq = null; U.screenKey = '';
+      document.getElementById('gatechk').style.display = 'none';
+      showNotification('GATE OPEN — GET OUT');
+    }
+  }
+  if (U.state === 'open') {
+    U.plugged.visible = true;
+    const o = U.openAmt;
+    U.pivot.scale.y = Math.max(0.03, 1 - o);
+    if (o > 0.5) U.doorBox.makeEmpty();
+    // walking into the open doorway extracts the player
+    if (o >= 0.95 && !gameWon && !over && Math.hypot(camera.position.x - U.doorWorld.x, camera.position.z - U.doorWorld.z) < 1.45) triggerWin();
+  }
+  drawGateScreen();
+}
+
+function activateExit() {
+  exitActive = true;
+  if (exitGate) exitGate.userData.state = 'ready';
+  showNotification("ALL 5 RELICS SECURED — GO TO THE EXTRACTION GATE TERMINAL");
+  updateHUD();
+}
+
+function triggerWin() {
+  if (gameWon) return;
+  gameWon = true;
+  controls.unlock();
+  document.getElementById('win-screen').style.display = 'flex';
+  setInteractPrompt(false);
+  showNotification("SIGNAL LOCKED — YOU ESCAPED");
+}
+
+function tryInteract() {
+  if (gateSeq) return;
+  if (xfer) { abortTransfer(); return; }
+  if (hiding) { leaveLocker(); return; }
+  if (nearbyItem && nearbyItem.type === 'locker') { enterLocker(nearbyItem.l); return; }
+  if (!nearbyItem) return;
+
+  if (nearbyItem.type === 'battery') {
+    const bat = nearbyItem.mesh;
+    scene.remove(bat);
+    batteries.splice(nearbyItem.index, 1);
+    batteryPower = Math.min(100, batteryPower + 40);
+    document.getElementById('battery-level').style.width = batteryPower + '%';
+    if (batteryPower > 50) {
+      document.getElementById('battery-level').style.backgroundColor = '#2e7';
+    }
+    showNotification("+40% BATTERY RECHARGED");
+    playCollectSound(false);
+    nearbyItem = null;
+    setInteractPrompt(false);
+  } else if (nearbyItem.type === 'relic') {
+    startTransfer(nearbyItem.mesh);
+  } else if (nearbyItem.type === 'exit') {
+    if (!exitActive) showNotification('ACCESS DENIED — ' + relicsCollected + ' / ' + RELIC_TARGET + ' RELICS ON DRIVE');
+    else startGateSeq();
+  }
+}
+
+// ================= RELIC TERMINAL TRANSFER =================
+function startTransfer(relic) {
+  if (xfer) return;
+  xfer = { relic, pct: 0, phase: 'in', t: 0 };
+  document.getElementById('x-title').textContent = 'RELIC_CORE_0' + (relicsCollected + 1) + '.dat';
+  document.getElementById('x-msg').textContent = 'HARDWARE DETECTED';
+  document.getElementById('x-bar').style.width = '0%';
+  document.getElementById('x-stick').classList.remove('in');
+  document.getElementById('xfer').style.display = 'block';
+  setInteractPrompt(false); playClickSound();
+}
+
+function updateXfer(dt) {
+  xfer.t += dt;
+  if (xfer.phase === 'in') {
+    if (xfer.t > 0.2) document.getElementById('x-stick').classList.add('in');
+    if (xfer.t > 1.0) { xfer.phase = 'sync'; document.getElementById('x-msg').textContent = 'SYNCING ARCHIVE...'; }
+  } else {
+    xfer.pct = Math.min(100, xfer.pct + dt * 28);
+    document.getElementById('x-bar').style.width = xfer.pct + '%';
+    if (xfer.pct >= 100) { const r = xfer.relic; endXfer(); collectRelic(r); }
+  }
+}
+
+function endXfer() {
+  xfer = null;
+  document.getElementById('xfer').style.display = 'none';
+  document.getElementById('x-stick').classList.remove('in');
+}
+
+function abortTransfer() { endXfer(); showNotification('TRANSFER ABORTED'); }
+
+function collectRelic(relic) {
+  const i = relics.indexOf(relic);
+  if (i < 0) return;
+  if (relic.userData.glow) scene.remove(relic.userData.glow);
+  scene.remove(relic);
+  relics.splice(i, 1);
+  relicsCollected++;
+  nearbyItem = null; setInteractPrompt(false);
+  playCollectSound(true);
+  showNotification(`TRANSFER SECURE (${relicsCollected}/${RELIC_TARGET})`);
+  updateHUD();
+  if (relicsCollected >= RELIC_TARGET) activateExit();
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// --- Background music (procedural ambient, no audio files needed) ---
+const Music = (() => {
+  let ctx = null, master = null, send = null, started = false, muted = false, scene = 'menu', timer = null, step = 0;
+  const LEVEL = { menu: 5.6, game: 5.6 };   // quieter during gameplay so the Warden's sounds stay audible
+  // Am - F - Dm - E : [bass, chord tones]
+  const CHORDS = [
+    [110.00, [220.00, 261.63, 329.63]],
+    [87.31,  [174.61, 220.00, 261.63]],
+    [73.42,  [146.83, 174.61, 220.00]],
+    [82.41,  [164.81, 207.65, 246.94]]
+  ];
+  const CHORD_LEN = 8;
+  function vol() { return muted ? 0 : LEVEL[scene]; }
+  function applyVol(tc) { if (master) master.gain.setTargetAtTime(vol(), ctx.currentTime, tc || 1.5); }
+  function pad(freq, t, len, peak, type) {
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = o2.type = type || 'triangle';
+    o.frequency.value = freq; o2.frequency.value = freq * 1.004;
+    f.type = 'lowpass'; f.frequency.value = 650;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + 3);
+    g.gain.linearRampToValueAtTime(peak * 0.8, t + len - 1);
+    g.gain.linearRampToValueAtTime(0.0001, t + len + 1.5);
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o2.start(t); o.stop(t + len + 1.6); o2.stop(t + len + 1.6);
+  }
+  function bell(freq, t) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.045, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+    o.connect(g); g.connect(master); g.connect(send);
+    o.start(t); o.stop(t + 3.3);
+  }
+  function playChord() {
+    if (!ctx || ctx.state !== 'running') return;
+    const t = ctx.currentTime + 0.05, c = CHORDS[step++ % CHORDS.length];
+    pad(c[0], t, CHORD_LEN, 0.07, 'sine');
+    c[1].forEach(fr => pad(fr, t, CHORD_LEN, 0.03));
+    const n = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const fr = c[1][Math.floor(Math.random() * 3)] * (Math.random() < 0.5 ? 2 : 4);
+      bell(fr, t + 1 + Math.random() * (CHORD_LEN - 2.5));
+    }
+  }
+  function run() { if (timer) return; playChord(); timer = setInterval(playChord, CHORD_LEN * 1000); }
+  function halt() { clearInterval(timer); timer = null; }
+  return {
+    start() {
+      if (started) return; started = true;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        ctx = new AC();
+        master = ctx.createGain(); master.gain.value = 0;
+        // limiter so very high levels don't distort
+        const lim = ctx.createDynamicsCompressor();
+        lim.threshold.value = -10; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.25;
+        master.connect(lim); lim.connect(ctx.destination);
+        // soft echo for a distant, hollow feel
+        const d = ctx.createDelay(1.5), fb = ctx.createGain(), lp = ctx.createBiquadFilter();
+        d.delayTime.value = 0.62; fb.gain.value = 0.42; lp.type = 'lowpass'; lp.frequency.value = 1400;
+        send = ctx.createGain(); send.gain.value = 0.6;
+        send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(master);
+        const go = () => { run(); applyVol(3); };
+        if (ctx.state === 'suspended') ctx.resume().then(go).catch(() => {}); else go();
+        document.addEventListener('visibilitychange', () => {
+          if (!ctx) return;
+          if (document.hidden) { halt(); ctx.suspend(); }
+          else ctx.resume().then(() => { run(); });
+        });
+      } catch (e) { console.warn('Music unavailable', e); }
+    },
+    setScene(sc) { scene = sc; applyVol(1.5); },
+    toggle() { muted = !muted; applyVol(0.4); return !muted; }
+  };
+})();
+
+// --- Audio ---
+function initAudioEngine() {
+  if (isAudioInitialized) return;
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const droneGain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(45, audioCtx.currentTime);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(46.5, audioCtx.currentTime);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(160, audioCtx.currentTime);
+    droneGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(droneGain);
+    droneGain.connect(audioCtx.destination);
+    osc1.start();
+    osc2.start();
+
+    setInterval(() => {
+      if (audioCtx) {
+        const freq = 120 + Math.sin(Date.now() * 0.001) * 60;
+        filter.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.5);
+      }
+    }, 500);
+
+    scheduleRandomSpookySFX();
+    isAudioInitialized = true;
+  } catch (e) {
+    console.warn("Web Audio API not fully supported", e);
+  }
+}
+
+function playClickSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function playCollectSound(high = false) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  const startF = high ? 880 : 520;
+  const endF = high ? 1400 : 780;
+  osc.frequency.setValueAtTime(startF, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(endF, audioCtx.currentTime + 0.12);
+  gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playFootstepSound() {
+  if (!audioCtx) return;
+  const bufferSize = audioCtx.sampleRate * 0.08;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(300 + Math.random() * 200, audioCtx.currentTime);
+  filter.Q.setValueAtTime(1.5, audioCtx.currentTime);
+  const gain = audioCtx.createGain();
+  const vol = isSprinting ? 0.25 : 0.12;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  noise.start();
+}
+
+function scheduleRandomSpookySFX() {
+  const nextTime = 8000 + Math.random() * 15000;
+  setTimeout(() => {
+    if (isGameLookActive() && !gameWon) triggerSpookySound();
+    scheduleRandomSpookySFX();
+  }, nextTime);
+}
+
+function triggerSpookySound() {
+  if (!audioCtx) return;
+  const type = Math.floor(Math.random() * 3);
+  const now = audioCtx.currentTime;
+  if (type === 0) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.linearRampToValueAtTime(200, now + 1.2);
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 1.2);
+  } else if (type === 1) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 2.0);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 2.0);
+  }
+}
+
+
+// ================= NAVIGATION =================
+function isOpen(cx, cz) { return Math.abs(cx) < 12 && Math.abs(cz) < 12 && !inRoomCell(cx, cz) && !wallCells.has(cx + ',' + cz); }
+function cellOf(p) { return [Math.round(p.x / 4), Math.round(p.z / 4)]; }
+
+function buildNav() {
+  const seen = new Set([SPAWN.cx + ',' + SPAWN.cz]), q = [[SPAWN.cx, SPAWN.cz]];
+  for (let i = 0; i < q.length; i++) {
+    for (const [dx, dz] of D4) {
+      const n = [q[i][0] + dx, q[i][1] + dz];
+      if (isOpen(n[0], n[1]) && !seen.has(n + '')) { seen.add(n + ''); q.push(n); }
+    }
+  }
+  openCells = q; // only cells reachable from the start
+}
+
+function pickCell(minD) {
+  const l = openCells.filter(c => Math.hypot(c[0] - SPAWN.cx, c[1] - SPAWN.cz) * 4 >= minD);
+  const c = l[Math.floor(Math.random() * l.length)] || openCells[openCells.length - 1];
+  return { cx: c[0], cz: c[1], x: c[0] * 4, z: c[1] * 4 };
+}
+
+function bfs(a, b) {
+  const k = c => c[0] + ',' + c[1], prev = new Map([[k(a), null]]), q = [a];
+  for (let i = 0; i < q.length; i++) {
+    const c = q[i];
+    if (c[0] === b[0] && c[1] === b[1]) break;
+    for (const [dx, dz] of D4) {
+      const n = [c[0] + dx, c[1] + dz];
+      if (isOpen(n[0], n[1]) && !prev.has(k(n))) { prev.set(k(n), c); q.push(n); }
+    }
+  }
+  const out = []; let c = prev.has(k(b)) ? b : null;
+  while (c && k(c) !== k(a)) { out.unshift(c); c = prev.get(k(c)); }
+  return out;
+}
+
+// ================= LOCKERS (HIDING PLACES) =================
+function spawnLockers() {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x2c3a36, roughness: 0.5, metalness: 0.6 });
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x55665f, roughness: 0.4, metalness: 0.7 });
+  const used = new Set();
+  if (exitGate) used.add(exitGate.userData.standCell);
+  for (let i = 0; i < 7; i++) {
+    let c, t = 0;
+    do { c = pickCell(10); } while (used.has(c.cx + ',' + c.cz) && t++ < 20);
+    used.add(c.cx + ',' + c.cz);
+    const wd = D4.filter(([ax, az]) => wallCells.has((c.cx + ax) + ',' + (c.cz + az))), [dx, dz] = (wd.length ? wd : D4)[Math.floor(Math.random() * (wd.length || 4))], px = c.x + dx * 1.4, pz = c.z + dz * 1.4, ax = dx !== 0;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(ax ? 1 : 1.6, 2.4, ax ? 1.6 : 1), mat);
+    m.position.set(px, 1.2, pz); m.castShadow = m.receiveShadow = true; scene.add(m);
+    const d = new THREE.Mesh(new THREE.BoxGeometry(ax ? 0.05 : 1.2, 2.1, ax ? 1.2 : 0.05), doorMat);
+    d.position.set(px - dx * 0.52, 1.2, pz - dz * 0.52); scene.add(d);
+    walls.push(new THREE.Box3().setFromObject(m));
+    lockers.push({ x: c.x, z: c.z, px, pz, dx, dz });
+  }
+}
+
+function enterLocker(l) {
+  const dist = Math.hypot(camera.position.x - M.g.position.x, camera.position.z - M.g.position.z);
+  if (M.state === 'CHASE' && dist < 5) { showNotification("TOO CLOSE. IT'S ON YOU!"); return; }
+  hiding = l; savedTorch = torchOn; torchOn = false; torchLight.visible = false;
+  camera.position.set(l.px, defaultCamY, l.pz);
+  camera.rotation.order = 'YXZ'; camera.rotation.set(0, Math.atan2(l.dx, l.dz), 0);
+  document.getElementById('hide-overlay').style.display = 'block';
+  M.sees = false;
+  if (M.state === 'CHASE') { setState('WAIT'); M.timer = 4; M.path = []; }
+  playClickSound(); showNotification('HIDING... HOLD STILL');
+}
+
+function leaveLocker() {
+  const l = hiding; hiding = null;
+  camera.position.set(l.x, defaultCamY, l.z);
+  if (savedTorch && batteryPower > 0) { torchOn = true; torchLight.visible = true; }
+  document.getElementById('hide-overlay').style.display = 'none';
+  playClickSound();
+}
+
+// ================= THE WARDEN (MONSTER) =================
+function buildMonster() {
+  const g = new THREE.Group();
+  const torso = new THREE.MeshStandardMaterial({ color: 0x41434a, roughness: 0.82, metalness: 0.12 });
+  const limb = new THREE.MeshStandardMaterial({ color: 0x777b82, roughness: 0.72, metalness: 0.08 });
+  const jointMat = new THREE.MeshStandardMaterial({ color: 0x292b31, roughness: 0.9 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xc8c8c2, roughness: 0.48, emissive: 0x171717 });
+  const maw = new THREE.MeshBasicMaterial({ color: 0x020202 });
+  const teeth = new THREE.MeshStandardMaterial({ color: 0xe6e1d4, roughness: 0.38 });
+  const add = (geo, mat, x, y, z, r, parent) => {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    if (r) Object.assign(mesh.rotation, r);
+    (parent || g).add(mesh);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+
+  // Gaunt, hunched torso with a narrow, uneven waist.
+  add(new THREE.CylinderGeometry(0.32, 0.5, 1.75, 10), torso, 0, 1.9, 0);
+  add(new THREE.CylinderGeometry(0.14, 0.105, 1.45, 8), torso, -0.27, 0.76, 0);
+  add(new THREE.CylinderGeometry(0.14, 0.105, 1.45, 8), torso, 0.27, 0.76, 0);
+  add(new THREE.SphereGeometry(0.43, 10, 8), jointMat, 0, 2.6, 0.02).scale.set(1.18, 0.64, 0.9);
+
+  // Extra-long segmented arms. Their default angle makes the claws trail
+  // behind the Warden and hover just above the floor instead of clipping it.
+  M.arms = [];
+  [-1, 1].forEach((side, index) => {
+    const upper = new THREE.Group();
+    upper.position.set(side * 0.49, 2.59, 0.04);
+    upper.rotation.x = 0.58;
+    upper.rotation.z = side * 0.10;
+    g.add(upper);
+
+    add(new THREE.SphereGeometry(0.19, 8, 8), jointMat, 0, 0, 0, null, upper);
+    add(new THREE.CylinderGeometry(0.115, 0.082, 1.36, 8), limb, 0, -0.69, 0, null, upper);
+    add(new THREE.TorusGeometry(0.092, 0.025, 5, 8), jointMat, 0, -1.29, 0, { x: Math.PI / 2 }, upper);
+
+    const forearm = new THREE.Group();
+    forearm.position.set(0, -1.34, 0);
+    forearm.rotation.x = 0.20;
+    upper.add(forearm);
+    add(new THREE.SphereGeometry(0.105, 8, 8), jointMat, 0, 0, 0, null, forearm);
+    add(new THREE.CylinderGeometry(0.088, 0.057, 1.35, 8), limb, 0, -0.68, 0, null, forearm);
+    add(new THREE.TorusGeometry(0.068, 0.018, 5, 8), jointMat, 0, -1.28, 0, { x: Math.PI / 2 }, forearm);
+
+    const hand = new THREE.Group();
+    hand.position.set(0, -1.31, 0.015);
+    forearm.add(hand);
+    add(new THREE.BoxGeometry(0.19, 0.27, 0.15), limb, 0, -0.09, 0.015, null, hand).scale.set(1, 1, 0.9);
+    // Four long, crooked fingers with pointed tips.
+    for (let i = 0; i < 4; i++) {
+      const spread = (i - 1.5) * 0.075;
+      add(new THREE.CylinderGeometry(0.035, 0.022, 0.33, 5), limb, spread, -0.32, 0.045, { z: (i - 1.5) * 0.10 }, hand);
+      add(new THREE.ConeGeometry(0.026, 0.23, 5), teeth, spread + (i - 1.5) * 0.025, -0.58, 0.055,
+          { x: Math.PI, z: (i - 1.5) * 0.12 }, hand);
+    }
+    // A hooked inner claw gives the hands a more distinct silhouette.
+    add(new THREE.ConeGeometry(0.035, 0.28, 5), teeth, side * -0.13, -0.21, 0.13,
+        { x: Math.PI * 0.78, z: side * -0.55 }, hand);
+
+    M.arms.push({ upper, forearm, hand, side, phase: index * Math.PI });
+  });
+
+  // Eyeless head with a deep mouth and irregular teeth.
+  const head = new THREE.Group();
+  head.position.set(0, 3.05, 0.05);
+  g.add(head);
+  M.head = head;
+  add(new THREE.SphereGeometry(0.38, 16, 12), skin, 0, 0, 0, null, head).scale.set(0.8, 1.3, 0.9);
+  add(new THREE.BoxGeometry(0.32, 0.38, 0.1), maw, 0, -0.23, 0.28, null, head);
+  for (let i = 0; i < 5; i++) {
+    const height = 0.12 + (i % 2) * 0.045;
+    add(new THREE.ConeGeometry(0.028, height, 4), teeth, -0.12 + i * 0.06, -0.1, 0.34,
+        { x: Math.PI }, head);
+  }
+  M.light = new THREE.PointLight(0xff2200, 0.9, 9, 2);
+  M.light.position.set(0, 2.6, 0.7);
+  g.add(M.light);
+
+  const c = pickCell(40);
+  g.position.set(c.x, 0, c.z);
+  scene.add(g);
+  M.g = g;
+}
+
+const _r = new THREE.Ray(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _h = new THREE.Vector3();
+function los() {
+  const g = M.g.position, p = camera.position;
+  _o.set(g.x, 1.8, g.z); _d.set(p.x - g.x, 0, p.z - g.z);
+  const L = _d.length(); _d.normalize(); _r.set(_o, _d);
+  for (const w of walls) {
+    if (Math.abs((w.min.x + w.max.x) / 2 - g.x) > L + 3 || Math.abs((w.min.z + w.max.z) / 2 - g.z) > L + 3) continue;
+    if (_r.intersectBox(w, _h) && _h.distanceTo(_o) < L - 0.6) return false;
+  }
+  return true;
+}
+
+// Can the Warden sense the player right now?
+function canDetect(dist) {
+  if (hiding) return false;
+  if (dist < 3.2) return true;                       // too close
+  if (isSprinting && dist < 11) return true;         // heard you run
+  if (dist > (torchOn ? 26 : 13)) return false;      // flashlight makes you visible from afar
+  if (dist > 6) {                                    // must be facing you when not close
+    const g = M.g, f = Math.sin(g.rotation.y) * (camera.position.x - g.position.x) + Math.cos(g.rotation.y) * (camera.position.z - g.position.z);
+    if (f / dist < 0.35) return false;
+  }
+  return los();
+}
+
+function setState(st) {
+  M.state = st;
+  const t = { PATROL: ['WARDEN: PATROLLING', '#666'], CHASE: ['WARDEN: HUNTING YOU', '#f22'], WAIT: ['WARDEN: LISTENING...', '#fa3'] }[st];
+  if (!t) return;
+  document.getElementById('threat-hud').innerText = t[0];
+  document.getElementById('threat-item').style.borderLeftColor = t[1];
+}
+
+function startChase() {
+  setState('CHASE'); M.lost = 0; M.repath = 0;
+  playScream(1.0, 0.4); doFlash(0.45);
+  showNotification('IT SEES YOU. RUN!');
+}
+
+function step(nx, nz, s) {
+  const g = M.g; g.position.x += nx * s; g.position.z += nz * s; M.moving = true;
+  let d = Math.atan2(nx, nz) - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+  g.rotation.y += d * 0.2;
+}
+function followPath(dt, sp) {
+  const g = M.g;
+  if (!M.path.length) return;
+  const t = M.path[0], dx = t[0] * 4 - g.position.x, dz = t[1] * 4 - g.position.z, d = Math.hypot(dx, dz);
+  if (d < 0.3) { M.path.shift(); return; }
+  step(dx / d, dz / d, sp * dt);
+}
+
+function updateMonster(dt) {
+  const m = M, g = m.g, p = controls.getObject().position;
+  // The containment room is a protected safe zone. Freeze the Warden at
+  // his real position; never snap him to the chamber doorway.
+  if (containmentSafeActive) {
+    m.path = [];
+    m.sees = false;
+    m.moving = false;
+    m.lost = 0;
+    m.jumping = false;
+    m.jumpY = 0;
+    if (m.state !== 'PATROL') setState('PATROL');
+    document.getElementById('danger').style.opacity = 0;
+    return;
+  }
+  const dx = p.x - g.position.x, dz = p.z - g.position.z, dist = Math.hypot(dx, dz);
+  m.moving = false;
+
+  // Give the player a few seconds to leave the doorway before the Warden can
+  // detect or catch them. During this window he resumes patrolling normally.
+  const leavingContainment = containmentExitGrace > 0;
+  if (leavingContainment) {
+    containmentExitGrace = Math.max(0, containmentExitGrace - dt);
+    m.sees = false;
+    m.lost = 0;
+    if (m.state !== 'PATROL') setState('PATROL');
+  } else {
+    m.lookT -= dt;
+    if (m.lookT <= 0) { m.lookT = 0.2; m.sees = canDetect(dist); }
+  }
+
+  if (m.state === 'PATROL') {            // 1) patrol between random waypoints
+    if (m.sees) startChase();
+    else {
+      if (!m.path.length) { const w = pickCell(0); m.path = bfs(cellOf(g.position), [w.cx, w.cz]); }
+      followPath(dt, 2.4);
+    }
+  } else if (m.state === 'CHASE') {      // 2) chase the player
+    if (m.sees) m.lost = 0; else m.lost += dt;
+    if (m.lost > 7) { setState('PATROL'); m.path = []; }
+    m.repath -= dt;
+    if (m.repath <= 0) { m.repath = 0.35; m.path = bfs(cellOf(g.position), cellOf(p)); }
+    if (dist > 0.001 && ((m.sees && dist < 4) || !m.path.length)) step(dx / dist, dz / dist, 5.4 * dt);
+    else followPath(dt, 5.4);
+    if (dist < 1.4 && !hiding) jumpScare();
+  } else if (m.state === 'WAIT') {       // 3) player hid: wait 4s, then back to patrol
+    m.timer -= dt;
+    g.rotation.y += Math.sin(clock.getElapsedTime() * 2) * dt * 1.5;
+    if (m.sees) startChase();
+    else if (m.timer <= 0) { setState('PATROL'); m.path = []; }
+  }
+
+  const t = clock.getElapsedTime();
+  const chasing = m.state === 'CHASE';
+  m.head.rotation.z = Math.sin(t * (chasing ? 9 : 1.5)) * (m.state === 'WAIT' ? 0.45 : 0.18);
+  g.rotation.z = m.moving ? Math.sin(t * (chasing ? 12 : 6)) * 0.05 : 0;
+
+  // Patrol: arms stay long and angled backwards, with a slow dragging sway.
+  // Chase: each arm pumps in an alternating rhythm so the hands rise and fall.
+  for (const arm of m.arms) {
+    if (chasing) {
+      const pump = Math.sin(t * 11.5 + arm.phase);
+      arm.upper.rotation.x = 0.12 + pump * 0.72;
+      arm.upper.rotation.z = arm.side * (0.13 + Math.sin(t * 11.5 + arm.phase) * 0.18);
+      arm.forearm.rotation.x = 0.18 - Math.max(0, pump) * 0.82;
+      arm.forearm.rotation.z = arm.side * (0.06 + Math.max(0, pump) * 0.12);
+      arm.hand.rotation.x = -0.12 + Math.max(0, pump) * 0.42;
+    } else {
+      const drag = Math.sin(t * (m.moving ? 6.5 : 1.8) + arm.phase);
+      arm.upper.rotation.x = 0.62 + drag * (m.moving ? 0.10 : 0.035);
+      arm.upper.rotation.z = arm.side * (0.10 + drag * 0.035);
+      arm.forearm.rotation.x = 0.22 + Math.max(0, drag) * 0.10;
+      arm.forearm.rotation.z = arm.side * 0.025;
+      arm.hand.rotation.x = 0.08;
+    }
+  }
+
+  // Occasional chase hops. The Warden's head tops out well below the 5.4-unit
+  // ceiling, so the jump cannot clip through it.
+  if (chasing) {
+    m.jumpCooldown -= dt;
+    if (!m.jumping && m.jumpCooldown <= 0) {
+      m.jumping = true;
+      m.jumpTime = 0;
+      m.jumpCooldown = 3.1 + Math.random() * 2.4;
+    }
+  }
+  if (m.jumping) {
+    m.jumpTime += dt;
+    const jumpProgress = Math.min(1, m.jumpTime / 0.82);
+    m.jumpY = Math.sin(Math.PI * jumpProgress) * 0.92;
+    if (jumpProgress >= 1) {
+      m.jumpY = 0;
+      m.jumping = false;
+    }
+  } else {
+    m.jumpY = 0;
+  }
+  g.position.y = Math.min(m.jumpY, 0.92);
+
+  m.stepT -= dt;
+  if (m.moving && m.stepT <= 0) { playThud(Math.max(0, 1 - dist / 30)); m.stepT = chasing ? 0.3 : 0.6; }
+  document.getElementById('danger').style.opacity = chasing ? Math.max(0, Math.min(1, 1.2 - dist / 22)) : 0;
+}
+
+// ================= JUMP SCARE =================
+function doFlash(o) {
+  const f = document.getElementById('flash');
+  f.classList.remove('go'); void f.offsetWidth;
+  f.style.setProperty('--o', o); f.classList.add('go');
+}
+
+function jumpScare() {
+  if (over) return;
+  over = true; endXfer(); setInteractPrompt(false);
+  if (gateSeq) { gateSeq = null; document.getElementById('gatechk').style.display = 'none'; if (exitGate && exitGate.userData.state === 'checking') exitGate.userData.state = 'ready'; }
+  document.getElementById('danger').style.opacity = 0;
+  const d = new THREE.Vector3(); camera.getWorldDirection(d); d.y = 0; d.normalize();
+  scareC = camera.position.clone(); scareD = d; scareT = 0;
+  M.g.scale.setScalar(1.15); M.g.rotation.set(0, Math.atan2(-d.x, -d.z), 0);
+  doFlash(0.95); playJumpScareAudio();
+  setTimeout(() => doFlash(0.8), 700);
+  setTimeout(() => {
+    controls.unlock();
+    document.getElementById('over-screen').style.display = 'flex';
+  }, 2500);
+}
+
+function scareTick(dt) {
+  scareT += dt;
+  const k = 1.15 - Math.min(0.6, scareT * 1.6), g = M.g;
+  g.position.set(scareC.x + scareD.x * k, -1.6, scareC.z + scareD.z * k);
+  camera.lookAt(g.position.x, 1.9, g.position.z);
+  camera.rotation.z = (Math.random() - 0.5) * 0.14;
+  M.light.intensity = Math.random() * 6;
+}
+
+// Use the supplied Talking Larry scream for the Warden's jump scare.
+function playJumpScareAudio() {
+  const audio = document.getElementById('jump-scare-audio');
+  if (!audio) return;
+
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 0.88;
+    const playback = audio.play();
+    if (playback && typeof playback.catch === 'function') {
+      playback.catch(err => console.warn('Jump-scare audio could not play:', err));
+    }
+  } catch (err) {
+    console.warn('Jump-scare audio could not play:', err);
+  }
+}
+
+function playScream(len, vol) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  [[700, 1900, 'sawtooth'], [930, 2300, 'sawtooth'], [110, 55, 'square']].forEach(([f0, f1, type]) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + 0.25);
+    o.frequency.linearRampToValueAtTime(f0 * 1.3, t + len);
+    g.gain.setValueAtTime(0.35 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + len);
+  });
+  const n = Math.floor(audioCtx.sampleRate * len), buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate), data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = audioCtx.createBufferSource(), ng = audioCtx.createGain();
+  src.buffer = buf; ng.gain.value = 0.7 * vol; src.connect(ng); ng.connect(audioCtx.destination); src.start(t);
+}
+
+function playThud(v) {
+  if (!audioCtx || v <= 0.02) return;
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(75, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.12);
+  g.gain.setValueAtTime(0.6 * v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.16);
+}
+
+// --- Collision ---
+function getPlayerBox(pos) {
+  return new THREE.Box3(
+    new THREE.Vector3(pos.x - 0.4, pos.y - 1.5, pos.z - 0.4),
+    new THREE.Vector3(pos.x + 0.4, pos.y + 0.3, pos.z + 0.4)
+  );
+}
+
+function checkCollision(pos) {
+  const pBox = getPlayerBox(pos);
+  for (const w of walls) {
+    if (pBox.intersectsBox(w)) return true;
+  }
+  return false;
+}
+
+// --- Main Update ---
+function updateMovement(dt) {
+  if (!isGameLookActive() || gameWon || over) return;
+  if (hiding) { setInteractPrompt(true, 'Leave Locker'); return; }
+  if (xfer) { setInteractPrompt(true, 'Abort Transfer'); updateXfer(dt); return; }
+  if (gateSeq) { setInteractPrompt(false); return; }
+
+  const speed = isSprinting ? 7.5 : 4.2;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  dir.y = 0;
+  dir.normalize();
+
+  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+  const move = new THREE.Vector3();
+
+  if (moveForward) move.add(dir);
+  if (moveBackward) move.sub(dir);
+  if (moveRight) move.sub(right);
+  if (moveLeft) move.add(right);
+
+  const isMoving = move.lengthSq() > 0;
+
+  if (isMoving) {
+    move.normalize();
+    const nextPos = controls.getObject().position.clone().addScaledVector(move, speed * dt);
+
+    if (!checkCollision(nextPos)) {
+      controls.getObject().position.copy(nextPos);
+    } else {
+      const nextPosX = controls.getObject().position.clone();
+      nextPosX.x = nextPos.x;
+      if (!checkCollision(nextPosX)) controls.getObject().position.x = nextPos.x;
+
+      const nextPosZ = controls.getObject().position.clone();
+      nextPosZ.z = nextPos.z;
+      if (!checkCollision(nextPosZ)) controls.getObject().position.z = nextPos.z;
+    }
+
+    stepInterval = isSprinting ? 0.32 : 0.52;
+    if (clock.getElapsedTime() - lastStepTime > stepInterval) {
+      playFootstepSound();
+      lastStepTime = clock.getElapsedTime();
+    }
+
+    walkCycle += dt * (isSprinting ? 14 : 9);
+    camera.position.y = defaultCamY + Math.sin(walkCycle) * (isSprinting ? 0.08 : 0.04);
+  } else {
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, defaultCamY, dt * 5);
+  }
+
+  // Flashlight battery
+  if (torchOn) {
+    batteryPower = Math.max(0, batteryPower - dt * 0.8);
+    document.getElementById('battery-level').style.width = batteryPower + '%';
+
+    if (batteryPower < 20) {
+      document.getElementById('battery-level').style.backgroundColor = '#e33';
+      if (Math.random() < 0.15) torchLight.intensity = Math.random() * 1.5;
+      else torchLight.intensity = 4.5;
+    } else if (batteryPower < 50) {
+      document.getElementById('battery-level').style.backgroundColor = '#ea2';
+    } else {
+      document.getElementById('battery-level').style.backgroundColor = '#2e7';
+    }
+
+    if (batteryPower <= 0) {
+      torchOn = false;
+      torchLight.visible = false;
+      showNotification("BATTERY DIED!");
+    }
+
+    flashlightSwayTime += dt * 2;
+    const targetVector = new THREE.Vector3();
+    camera.getWorldDirection(targetVector);
+    torchTarget.position.copy(camera.position).add(targetVector.multiplyScalar(10));
+    torchTarget.position.x += Math.sin(flashlightSwayTime * 0.8) * 0.1;
+    torchTarget.position.y += Math.cos(flashlightSwayTime * 1.2) * 0.1;
+  }
+
+  const playerPos = controls.getObject().position;
+
+  // Animate relics (bob + spin)
+  for (const relic of relics) {
+    relic.position.y = 0.9 + Math.sin(clock.getElapsedTime() * 2 + relic.userData.bobOffset) * 0.12;
+    relic.rotation.y += dt * 1.4;
+  }
+
+  // Animate batteries slightly
+  for (const bat of batteries) {
+    bat.rotation.y += dt * 2;
+  }
+
+  // --- Proximity detection for E interact ---
+  nearbyItem = null;
+  let bestDist = 1.7;
+
+  for (let i = 0; i < batteries.length; i++) {
+    const d = playerPos.distanceTo(batteries[i].position);
+    if (d < bestDist) {
+      bestDist = d;
+      nearbyItem = { type: 'battery', mesh: batteries[i], index: i };
+    }
+  }
+
+  for (let i = 0; i < relics.length; i++) {
+    const d = playerPos.distanceTo(relics[i].position);
+    if (d < bestDist) {
+      bestDist = d;
+      nearbyItem = { type: 'relic', mesh: relics[i], index: i };
+    }
+  }
+
+  if (exitGate && exitGate.userData.state !== 'open' && !gateSeq) {
+    const tp = exitGate.userData.termWorld;
+    if (!nearbyItem && Math.hypot(playerPos.x - tp.x, playerPos.z - tp.z) < 2.6) nearbyItem = { type: 'exit', mesh: exitGate, index: -1 };
+  }
+
+  if (!nearbyItem) {
+    for (const l of lockers) {
+      if (Math.hypot(playerPos.x - l.px, playerPos.z - l.pz) < 2.3) { nearbyItem = { type: 'locker', l }; break; }
+    }
+  }
+
+  // Show / hide interact prompt
+  if (nearbyItem) {
+    if (nearbyItem.type === 'battery') setInteractPrompt(true, 'Pick up Battery');
+    else if (nearbyItem.type === 'relic') setInteractPrompt(true, 'Insert Drive (Download Relic)');
+    else if (nearbyItem.type === 'exit') setInteractPrompt(true, exitActive ? 'Insert Drive (Verify 5 Relics)' : 'Gate Terminal (Locked)');
+    else if (nearbyItem.type === 'locker') setInteractPrompt(true, 'Hide in Locker');
+  } else {
+    setInteractPrompt(false);
+  }
+}
+
+function isInsideContainmentRoom(pos) {
+  // Room interior is x=23..41, z=23..41. Trigger after the player has
+  // crossed a little beyond the sliding door so it never closes on them.
+  return pos.x > 23.4 && pos.x < 40.6 && pos.z > 23.4 && pos.z < 39.8;
+}
+
+function updateContainmentSecurity(dt) {
+  if (!containmentDoor || !doorFramePos || !isGameLookActive()) return;
+  const player = controls.getObject().position;
+  const insideNow = isInsideContainmentRoom(player);
+  if (insideNow !== containmentSafeActive) {
+    containmentSafeActive = insideNow;
+    if (insideNow) {
+      // Entering the chamber breaks the chase and freezes the Warden where he is.
+      containmentExitGrace = 0;
+      if (M.g) {
+        M.path = [];
+        M.sees = false;
+        M.lost = 0;
+        if (M.state !== 'PATROL') setState('PATROL');
+      }
+      showNotification('CONTAINMENT SECURE — WARDEN LOCKED OUT');
+    } else {
+      // Don't let the Warden punish the player for simply stepping back outside.
+      containmentExitGrace = 6.5;
+      if (M.g) {
+        M.path = [];
+        M.sees = false;
+        M.lost = 0;
+        M.repath = 0;
+        if (M.state !== 'PATROL') setState('PATROL');
+      }
+      showNotification('LEAVING CONTAINMENT — HEAD START: 6 SECONDS');
+    }
+  }
+
+  const dist = Math.hypot(player.x - doorFramePos.x, player.z - doorFramePos.z);
+  const shouldOpen = !containmentSafeActive && dist < 6.5;
+  if (shouldOpen && !doorOpen) {
+    doorOpen = true;
+    showNotification('CONTAINMENT DOOR OPENING');
+  } else if (!shouldOpen && doorOpen && (containmentSafeActive || dist > 8.5)) {
+    doorOpen = false;
+  }
+
+  if (containmentDoor.userData.statusLight) {
+    containmentDoor.userData.statusLight.material.color.setHex(doorOpen ? 0x33ff66 : 0xff3333);
+  }
+  const targetX = doorOpen ? doorClosedX + 4.6 : doorClosedX;
+  containmentDoor.position.x = THREE.MathUtils.lerp(containmentDoor.position.x, targetX, dt * 4.2);
+
+  // Keep the shared collision box synchronized with the sliding panel.
+  if (doorCollisionBox) {
+    if (doorOpen && Math.abs(containmentDoor.position.x - targetX) < 0.3) {
+      doorCollisionBox.makeEmpty();
+    } else {
+      doorCollisionBox.setFromObject(containmentDoor);
+    }
+  }
+}
+
+// ================= SMOKE EMITTERS =================
+const smokeEmitters = [];
+let _smokeTexG = null;
+const _smokeGeo = new THREE.PlaneGeometry(1, 1);
+function smokeTexture() {
+  if (_smokeTexG) return _smokeTexG;
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(64, 64, 3, 64, 64, 63);
+  g.addColorStop(0, 'rgba(235,242,250,0.85)'); g.addColorStop(0.3, 'rgba(195,205,218,0.6)');
+  g.addColorStop(0.65, 'rgba(130,145,162,0.28)'); g.addColorStop(1, 'rgba(70,82,98,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  return (_smokeTexG = new THREE.CanvasTexture(c));
+}
+function resetSmoke(e, p, advance) {
+  const r = Math.random;
+  p.age = 0; p.life = e.life * (0.7 + 0.6 * r());
+  p.size = e.size * (0.7 + 0.6 * r());
+  p.vel.set(e.vx + (r() - 0.5) * 0.25, e.rise * (0.7 + 0.6 * r()), e.vz + (r() - 0.5) * 0.25);
+  p.m.position.set(e.x + (r() - 0.5) * e.sx, e.y + r() * 0.25, e.z + (r() - 0.5) * e.sz);
+  p.rot = (r() - 0.5) * 0.4;
+  if (advance) { p.age = r() * p.life; p.m.position.addScaledVector(p.vel, p.age); }
+}
+function addSmokeEmitter(e) {
+  e.parts = [];
+  for (let i = 0; i < e.count; i++) {
+    const mat = new THREE.MeshBasicMaterial({ map: smokeTexture(), color: e.color || 0xd4dbe4, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    const m = new THREE.Mesh(_smokeGeo, mat);
+    m.renderOrder = 3; scene.add(m);
+    const p = { m, vel: new THREE.Vector3(), age: 0, life: 1, size: 1, rot: 0 };
+    resetSmoke(e, p, true);
+    e.parts.push(p);
+  }
+  smokeEmitters.push(e);
+}
+function updateSmokeEmitters(dt) {
+  camera.getWorldPosition(_smokeCameraPos);
+  for (const e of smokeEmitters) {
+    for (const p of e.parts) {
+      p.age += dt;
+      if (p.age >= p.life) resetSmoke(e, p, false);
+      const k = p.age / p.life;
+      p.m.position.addScaledVector(p.vel, dt);
+      p.m.lookAt(_smokeCameraPos);
+      p.m.rotateZ(p.rot);
+      p.m.scale.setScalar(p.size * (1 + k * 1.3));
+      p.m.material.opacity = e.op * Math.sin(Math.PI * k);
+    }
+  }
+}
+function spawnSmokeSources() {
+  // Smoke seeping out under the containment room door and drifting into the corridor
+  addSmokeEmitter({ x: 32, y: 0.25, z: 41.8, sx: 3.6, sz: 0.5, vx: 0, vz: 0.6, rise: 0.22, count: 34, size: 2.6, life: 5.5, op: 0.42 });
+  // Extra plumes drifting out along the room's outer south wall
+  addSmokeEmitter({ x: 23.2, y: 0.3, z: 41.8, sx: 1.2, sz: 0.5, vx: -0.2, vz: 0.5, rise: 0.25, count: 8, size: 2.0, life: 5, op: 0.32 });
+  addSmokeEmitter({ x: 40.8, y: 0.3, z: 41.8, sx: 1.2, sz: 0.5, vx: 0.2, vz: 0.5, rise: 0.25, count: 8, size: 2.0, life: 5, op: 0.32 });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  updateMovement(dt);
+  fallbackEdgeLook(dt);
+  updateContainmentSecurity(dt);
+  updateGate(dt);
+  updatePlayerHands(dt);
+  updateSmokeEmitters(dt);
+  if (isGameLookActive() && !gameWon && !over) updateMonster(dt);
+  if (over && scareT >= 0) scareTick(dt);
+  // Animate smoke rising + fade from the chamber
+  if (window.containmentSmokes) {
+    for (const s of window.containmentSmokes) {
+      s.position.y += s.userData.speed * dt;
+      s.position.x += s.userData.driftX * dt;
+      s.position.z += s.userData.driftZ * dt;
+      s.rotation.z += s.userData.rot * dt;
+      camera.getWorldPosition(_smokeCameraPos);
+      s.lookAt(_smokeCameraPos);
+      const heightFactor = Math.min(1, Math.max(0, (s.position.y - 0.35) / 5.4));
+      const pulse = 0.92 + Math.sin(clock.getElapsedTime() * 1.25 + s.userData.phase) * 0.08;
+      s.material.opacity = s.userData.baseOp * (1 - heightFactor * 0.42) * pulse;
+      if (s.position.y > 5.65 || Math.abs(s.position.x - 32) > 3.6 || Math.abs(s.position.z - 32) > 3.6) {
+        s.position.set(32 + (Math.random() - 0.5) * 6.0,
+                       0.35 + Math.random() * 0.55,
+                       32 + (Math.random() - 0.5) * 6.0);
+        s.userData.phase = Math.random() * Math.PI * 2;
+        s.material.opacity = s.userData.baseOp;
+      }
+    }
+  }
+
+  // Pulse the chamber warning light
+  if (window.containmentChamber && window.containmentChamber.userData.warnLight) {
+    const t = clock.getElapsedTime();
+    window.containmentChamber.userData.warnLight.intensity = 1.2 + Math.sin(t * 3.5) * 0.8;
+  }
+
+  drawCollectibleMap();
+  renderer.render(scene, camera);
+}
+    </script>
+    <audio id="jump-scare-audio" preload="auto" src="data:audio/mpeg;base64,SUQzBAAAAAAEaVRSQ0sAAAAFAAADMS8xAFRJVDIAAAAUAAADMTAxc291bmRib2FyZHMuY29tAFRYWFgAAAAbAAADYXV0aG9yADEwMXNvdW5kYm9hcmRzLmNvbQBUUEUyAAAAFAAAAzEwMXNvdW5kYm9hcmRzLmNvbQBUQUxCAAAAFAAAAzEwMXNvdW5kYm9hcmRzLmNvbQBUSVQxAAAAFAAAAzEwMXNvdW5kYm9hcmRzLmNvbQBUQ09NAAAAFAAAAzEwMXNvdW5kYm9hcmRzLmNvbQBUWFhYAAAAGQAAA3llYXIAMTAxc291bmRib2FyZHMuY29tAFRQRTEAAAAUAAADMTAxc291bmRib2FyZHMuY29tAFRYWFgAAAAcAAADY29tbWVudAAxMDFzb3VuZGJvYXJkcy5jb20AVENPTgAAAAgAAANTcGVlY2gAVENPUAAAABQAAAMxMDFzb3VuZGJvYXJkcy5jb20AVFhYWAAAACAAAANkZXNjcmlwdGlvbgAxMDFzb3VuZGJvYXJkcy5jb20AVFhYWAAAAB0AAANzeW5vcHNpcwAxMDFzb3VuZGJvYXJkcy5jb20AVFhYWAAAABkAAANzaG93ADEwMXNvdW5kYm9hcmRzLmNvbQBUWFhYAAAAHwAAA2VwaXNvZGVfaWQAMTAxc291bmRib2FyZHMuY29tAFRYWFgAAAAcAAADbmV0d29yawAxMDFzb3VuZGJvYXJkcy5jb20AVFhYWAAAABkAAANVU0xUADEwMXNvdW5kYm9hcmRzLmNvbQBUU1NFAAAADgAAA0xhdmY2MS43LjEwMwAAAAAAAAAAAAAA//uQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//uSxDkDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7ksQ5A8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUCmYEmaE+JDggQCQYoeNggLmmHCoAUoxkma9eZkGpUYQQY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BJAyuTQ41qvnlzUtOwNM11QVXIytG5DWBvm81qJpp91S0zAcmrx9U9x1xtiC9Imfnscs1BjT2mP7N1mrH2e9lukp8vQC6sY9KaMOC4MWT8LkZJasrap3FopZKgJSRZKNabjBbLYZlkZdtlLEkcT5NaUrst612bfWgmn/gyDa8NYX5FRTVR4ndju41y7LuzFuUPTDuMPPhZj0vkO7D1s5flxX+oYhbxp5RTP7I5magOpNwZD8212I0NFKp2C2uv9ahmM2b1BlPWJXjZyz1VuVJVN1bDtRbKgsTU/O0cps00RzsTUpjN2epXRickrVf/Uvis1yvXltaUX5JDtPLbOF/7t6xd7qrhX+zUtVu029ZUNbl/PPmN3xqkxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqoAAAAABRGNXhnBh3/MjGzqcJgIWAf8dUTFgdfiHH/MQDo6z//uSxOgA16WXUIfhkItRM+jWn4ABrmlQN/m9SiYSLJgBePsnKQgL/80qDzGwqKpdECBMGg4KgwwmAgsEf//MJgAySQDGpaKhQAyDoWcs+TSRS///zEwhMeoYxCRjNpuIiCZZGCPT+oTi+TWm4////mBAEYaEZiwsjQcBBnDCADBawhpTSwACWYoqql////8RBUiCJh8LmFR4ZXBgGDZEHwcDER5qLF5WlP2glaTCa//////7+mABGEFElDSK5iEdGAh6YmEhgUUmARIHDOVUzAoCcZ4Wkv4zqalf//////+SA8ueYHBJi4PmEQSPDlAMWxLngIMmDAKj6YBCCi5ZBHmSo8oOshZLEYatxJ9n67EaT/////////8eA0rScXHh///////////////2qtym3UxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7ksTYACe12xa5vgAAAAA0g4AABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=">
+    </audio>
+  </body>
+</html>

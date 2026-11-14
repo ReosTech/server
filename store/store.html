@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reos - Store </title>
+    <link rel="icon" type="image/jpg" href="https://reostech.web.app/reo.jpg">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f9fafb;
+        }
+
+        /* Gradient Button Class for Cards */
+        .btn-gradient {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2563eb, #8b5cf6);
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            width: 100%;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-gradient:active {
+            transform: translateY(0);
+        }
+
+        /* Fixed Navigation Header */
+        header {
+            background-color: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo { font-size: 1.2rem; font-weight: 800; color: #2563eb; text-decoration: none; flex-shrink: 0; }
+        .nav-actions { display: flex; gap: 0.5rem; align-items: center; position: relative; max-width: 75%; }
+
+        /* Navigation Buttons */
+        .btn-nav-home {
+            background-color: #ffffff; color: #4b5563; padding: 0.4rem 0.8rem;
+            border-radius: 6px; text-decoration: none; font-weight: 500;
+            border: 1px solid #d1d5db; cursor: pointer; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .btn-nav-home:hover { background-color: #f3f4f6; color: #111827; }
+
+        .btn-nav-join {
+            background-color: #2563eb; color: #ffffff; padding: 0.4rem 0.8rem;
+            border-radius: 6px; text-decoration: none; font-weight: 500;
+            border: none; cursor: pointer; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .btn-nav-join:hover { background-color: #1d4ed8; }
+
+        /* Dropdown Menu & Profile Text Truncation */
+        .profile-menu-container { display: none; position: relative; max-width: 100%; }
+        .btn-profile {
+            background-color: #ffffff; color: #1f2937; padding: 0.4rem 0.75rem;
+            border-radius: 6px; font-weight: 600; border: 1px solid #e5e7eb;
+            cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;
+            max-width: 160px;
+        }
+        #profileName {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100px;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none; position: absolute; right: 0; top: 110%;
+            background-color: #ffffff; min-width: 180px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden; z-index: 200;
+        }
+        .dropdown-content button {
+            width: 100%; text-align: left; background: none; border: none;
+            color: #4b5563; padding: 0.75rem 1rem; display: block; font-size: 0.9rem; cursor: pointer;
+        }
+        .dropdown-content button:hover { background-color: #f3f4f6; color: #2563eb; }
+
+        /* Header Hero - Mobile Optimized */
+        .page-header { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 2rem 1.25rem; text-align: center; }
+        .page-header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+            line-height: 1.3;
+        }
+        .page-header p { font-size: 0.95rem; color: #4b5563; max-width: 600px; margin: 0 auto; }
+
+        /* Layout Grid */
+        .content-section { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .dash-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+            border-color: #cbd5e1;
+        }
+
+        .dash-card-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .dash-card h2 { font-size: 1.2rem; color: #0f172a; margin-bottom: 0.5rem; }
+        .dash-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 1.25rem; flex: 1; }
+
+        /* Developer Console Panel */
+        #dev-options-panel {
+            display: none; background-color: #ffffff; border: 1px solid #e5e7eb;
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .dev-actions-row button { flex: 1; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; font-size: 0.9rem; }
+        #modeCreateBtn.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        #modeRemoveBtn.active { background-color: #dc2626; color: white; border-color: #dc2626; }
+        .btn-project-opt { background-color: #ffffff; color: #1f2937; border: 1px solid #d1d5db; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-project-opt:hover { border-color: #2563eb; background-color: #f0f6ff; color: #2563eb; }
+
+        @media (min-width: 640px) {
+            .page-header { padding: 3rem 2rem; }
+            .page-header h1 { font-size: 2.25rem; }
+            .btn-profile { max-width: 220px; }
+            #profileName { max-width: 170px; }
+        }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZQ11ET1VX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'G-0ZQ11ET1VX');
+        </script>
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="/index.html" class="logo">Reos</a>
+            <div class="nav-actions">
+                <button class="btn-nav-home" onclick="window.location.href='/index.html'">Home</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="page-header">
+        <div class="header-container">
+            <h1 id="userGreeting">Store</h1>
+            <p></p>
+        </div>
+    </section>
+
+    <main class="content-section">
+
+        <!-- DASHBOARD NAVIGATION CARDS -->
+        <div class="dashboard-grid">
+        <div class="dash-card">
+        <div>
+        <div class="dash-card-icon">🎮</div>
+        <h2 class="dash-card-h2">Project Phobos</h2>
+        <div class="dash-card-p">Made by IQgamerzX</div>
+        <button class="btn-gradient" onclick="window.location.href='/store/pp.html'">play</button>
+        </div>
+        </div>
+
+<div class="dash-card">
+<div>
+<div class="dash-card-icon">🎮</div>
+<h2 class="dash-card-h2">Matrix</h2>
+<div class="dash-card-p">Made by IQgamerzX</div>
+<button class="btn-gradient" onclick="window.location.href='/store/mtrx.html'">view</button>
+        </div>
+        </div>
+        </div>
+        <div class="dash-card">
+         <div>
+         <div class="dash-card-icon">🎮</div>
+         <h2 class="dash-card-h2">Sector</h2>
+         <div class="dash-card-p">Made by IQgamerzX</div>
+         <button class="btn-gradient" onclick="window.location.href='/store/sector.html'">Play</button>
+                </div>
+                </div>
+              </div>
+        
+            
+                
+
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('user');
+
+        if (username) {
+            document.getElementById('navJoinBtn').style.display = 'none';
+            document.getElementById('profileMenu').style.display = 'block';
+
+            // Clean up long email addresses for display (use username before @ if applicable)
+            const displayName = username.includes('@') ? username.split('@')[0] : username;
+            document.getElementById('profileName').innerText = displayName;
+            document.getElementById('userGreeting').innerText = `Welcome back, ${displayName}!`;
+        }
+
+        function openConsole() {
+            const baseUrl = 'https://reostech.pagekite.me/console.html';
+            if (username) {
+                window.location.href = `${baseUrl}?user=${encodeURIComponent(username)}`;
+            } else {
+                window.location.href = baseUrl;
+            }
+        }
+
+        function toggleDropdown() {
+            const box = document.getElementById('dropdownBox');
+            box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function revealDeveloperOptions() {
+            document.getElementById('dev-options-panel').style.display = 'block';
+            document.getElementById('dropdownBox').style.display = 'none';
+            document.getElementById('dev-options-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        let currentDevMode = 'create';
+        function setDevMode(mode) {
+            currentDevMode = mode;
+            document.getElementById('modeCreateBtn').classList.remove('active');
+            document.getElementById('modeRemoveBtn').classList.remove('active');
+            if(mode === 'create') { document.getElementById('modeCreateBtn').classList.add('active'); }
+            else { document.getElementById('modeRemoveBtn').classList.add('active'); }
+        }
+
+        function handleProjectAction(category) {
+            if (currentDevMode === 'create') { alert(`Successfully created a new ${category}`); }
+            else { alert(`WARNING: Removed ${category} but it still might be present on your device`); }
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.btn-profile')) {
+                document.getElementById('dropdownBox').style.display = 'none';
+            }
+        }
+    </script>
+
+</body>
+</html>
