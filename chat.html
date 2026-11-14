@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reos - AI Workspace</title>
+  <link rel="icon" type="image/jpg" href="/ai.jpg">
+  
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Prism.js CSS Theme (Tomorrow Night) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+  <style>
+    body { 
+      font-family: "Inter", system-ui, sans-serif; 
+      background: #f8fafc; 
+      margin: 0; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh; 
+      position: relative;
+    }
+
+    /* FROSTED GLASS HEADER OVERLAY */
+    header { 
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background-color: rgba(248, 250, 252, 0.7); 
+      backdrop-filter: blur(16px);                 
+      -webkit-backdrop-filter: blur(0.05px);         
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8); 
+      padding: 14px 24px; 
+      font-size: 18px; 
+      font-weight: 700; 
+      color: #2563eb; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+
+    header button {
+      padding: 6px 14px;
+      font-size: 13px;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .chat-container { 
+      flex: 1; 
+      padding: 75px 20px 20px 20px;
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 15px; 
+    }
+
+    .message { 
+      max-width: 75%; 
+      padding: 12px 16px; 
+      border-radius: 12px; 
+      font-size: 15px; 
+      line-height: 1.5; 
+      word-wrap: break-word; 
+    }
+
+    .message p { margin: 0 0 8px 0; }
+    .message p:last-child { margin-bottom: 0; }
+
+    .user { 
+      background: #2563eb; 
+      color: #fff; 
+      align-self: flex-end; 
+      border-bottom-right-radius: 2px; 
+    }
+
+    .ai { 
+      background: #fff; 
+      color: #1e293b; 
+      align-self: flex-start; 
+      border-bottom-left-radius: 2px; 
+      border: 1px solid #e2e8f0; 
+    }
+
+    .system-msg {
+      background: #eff6ff;
+      color: #1d4ed8;
+      align-self: center;
+      border-radius: 8px;
+      font-size: 13px;
+      padding: 8px 14px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .input-area { 
+      padding: 20px; 
+      background: #fff; 
+      border-top: 1px solid #e2e8f0; 
+      display: flex; 
+      align-items: center;
+      gap: 10px; 
+      z-index: 10;
+    }
+
+    input[type="text"] { 
+      flex: 1; 
+      padding: 14px; 
+      border: 1px solid #cbd5e1; 
+      border-radius: 10px; 
+      font-size: 15px; 
+      outline: none; 
+    }
+
+    input[type="text"]:focus { border-color: #2563eb; }
+
+    .upload-btn {
+      padding: 12px 16px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .upload-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .input-area button.send-btn { 
+      padding: 14px 24px; 
+      background: #2563eb; 
+      color: #fff; 
+      border: none; 
+      border-radius: 10px; 
+      font-weight: 600; 
+      cursor: pointer; 
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* CODE BLOCK WRAPPER AND BUTTONS */
+    .code-block-wrapper {
+      position: relative;
+      margin: 12px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .code-block-header {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      background: #1d1f21;
+      padding: 6px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .code-btn {
+      background: #374151;
+      color: #f9fafb;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .code-btn:hover {
+      background: #4b5563;
+    }
+
+    pre { 
+      margin: 0 !important; 
+      border-radius: 0 0 8px 8px !important; 
+    }
+    
+    code { font-family: 'Fira Code', 'Courier New', monospace; }
+  </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZQ11ET1VX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'G-0ZQ11ET1VX');
+        </script>
+</head>
+<body>
+  <header>
+    <span>Reos AI Assistant</span>
+    <button onclick="window.location.href='/pg2.html'">Dashboard</button>
+  </header>
+  
+  <div class="chat-container" id="chatBox">
+    <div class="message ai">Hello! How can I help you today? You can ask questions, paste links, or upload document files directly.</div>
+  </div>
+
+  <div class="input-area">
+    <label for="fileInput" class="upload-btn">
+      📁 Upload
+    </label>
+    <input type="file" id="fileInput" accept=".txt,.json,.md,.csv,.js,.html,.css,.py" onchange="handleFileUpload(event)">
+    
+    <input type="text" id="userInput" placeholder="Ask something, paste a URL, or attach a file..." onkeypress="if(event.key==='Enter') sendMessage()">
+    <button class="send-btn" onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Prism.js Core & Language Autoloader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+<script>
+let attachedFile = null;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'docChat') {
+    const docName = sessionStorage.getItem('docContext_Name');
+    const docText = sessionStorage.getItem('docContext_Content');
+
+    if (docText) {
+      sessionStorage.removeItem('docContext_Name');
+      sessionStorage.removeItem('docContext_Content');
+
+      addSystemMessage(`📄 Attached Document: **${docName}**`);
+      
+      const prompt = `I have attached the document content from "${docName}":\n\n---\n${docText.substring(0, 8000)}\n---\n\nPlease provide a summary of key takeaways and action items from this document.`;
+      processAIMessage(prompt, `Analyzing document context from ${docName}...`);
+    }
+  }
+});
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    attachedFile = {
+      name: file.name,
+      content: e.target.result
+    };
+    addSystemMessage(`📎 Attached file: **${file.name}** ready to send.`);
+  };
+  reader.readAsText(file);
+}
+
+function addSystemMessage(text) {
+  const chatBox = document.getElementById('chatBox');
+  const sysDiv = document.createElement('div');
+  sysDiv.className = 'message system-msg';
+  sysDiv.innerHTML = marked.parse(text);
+  chatBox.appendChild(sysDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  enhanceCodeBlocks(sysDiv);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text && !attachedFile) return;
+
+  let userDisplayMessage = text;
+  let finalPrompt = text;
+
+  if (attachedFile) {
+    userDisplayMessage = text ? `[Attached: ${attachedFile.name}]\n${text}` : `[Attached: ${attachedFile.name}] Please summarize this file.`;
+    finalPrompt = `Document Attached: "${attachedFile.name}"\n\nContent:\n---\n${attachedFile.content.substring(0, 8000)}\n---\n\nUser Instruction: ${text || 'Please summarize this attached file.'}`;
+    
+    attachedFile = null;
+    document.getElementById('fileInput').value = '';
+  }
+
+  const userDiv = document.createElement('div');
+  userDiv.className = 'message user';
+  userDiv.innerText = userDisplayMessage;
+  document.getElementById('chatBox').appendChild(userDiv);
+  input.value = '';
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const foundUrls = text.match(urlRegex);
+
+  if (foundUrls && foundUrls.length > 0 && !finalPrompt.includes("Document Attached:")) {
+    const targetUrl = foundUrls[0];
+    addSystemMessage(`🌐 Extracting web page content from ${targetUrl}...`);
+
+    try {
+      const response = await fetch('/api/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl })
+      });
+      const data = await response.json();
+
+      if (data.text) {
+        finalPrompt = `Webpage Content Extracted from ${targetUrl}:\n\n---\n${data.text}\n---\n\nUser Question/Instruction: ${text}`;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch URL content, proceeding with standard prompt.");
+    }
+  }
+
+  processAIMessage(finalPrompt);
+}
+
+async function processAIMessage(promptText, displayText) {
+  const chatBox = document.getElementById('chatBox');
+  const aiDiv = document.createElement('div');
+  aiDiv.className = 'message ai';
+  aiDiv.innerText = displayText || 'Thinking...';
+  chatBox.appendChild(aiDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `message=${encodeURIComponent(promptText)}`
+    });
+    const data = await response.json();
+
+    if (data.reply) {
+      aiDiv.innerHTML = marked.parse(data.reply);
+      enhanceCodeBlocks(aiDiv);
+    } else {
+      aiDiv.innerText = "Error reading response.";
+    }
+  } catch (err) {
+    aiDiv.innerText = "Error communicating with backend server.";
+  }
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function enhanceCodeBlocks(container) {
+  const preElements = container.querySelectorAll('pre');
+
+  preElements.forEach((pre) => {
+    if (pre.parentElement.classList.contains('code-block-wrapper')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block-wrapper';
+
+    const header = document.createElement('div');
+    header.className = 'code-block-header';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'code-btn';
+    copyBtn.innerText = '📋 Copy';
+    copyBtn.onclick = () => copyCode(pre, copyBtn);
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'code-btn';
+    downloadBtn.innerText = '⬇️ Download';
+    downloadBtn.onclick = () => downloadCode(pre);
+
+    header.appendChild(copyBtn);
+    header.appendChild(downloadBtn);
+
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(header);
+    wrapper.appendChild(pre);
+  });
+
+  Prism.highlightAllUnder(container);
+}
+
+function copyCode(preElement, btn) {
+  const codeText = preElement.querySelector('code')?.innerText || preElement.innerText;
+  navigator.clipboard.writeText(codeText).then(() => {
+    const originalText = btn.innerText;
+    btn.innerText = '✅ Copied!';
+    setTimeout(() => { btn.innerText = originalText; }, 2000);
+  }).catch(err => console.error("Could not copy text: ", err));
+}
+
+function downloadCode(preElement) {
+  const codeElement = preElement.querySelector('code');
+  const codeText = codeElement?.innerText || preElement.innerText;
+
+  let ext = 'txt';
+  if (codeElement) {
+    const classNames = codeElement.className.split(' ');
+    for (const cls of classNames) {
+      if (cls.startsWith('language-')) {
+        const lang = cls.replace('language-', '');
+        const extMap = {
+          javascript: 'js', js: 'js',
+          python: 'py', py: 'py',
+          html: 'html', css: 'css',
+          json: 'json', markdown: 'md',
+          bash: 'sh', shell: 'sh'
+        };
+        ext = extMap[lang] || lang;
+        break;
+      }
+    }
+  }
+
+  const blob = new Blob([codeText], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `code_snippet.${ext}`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+</script>
+</body>
+</html>
